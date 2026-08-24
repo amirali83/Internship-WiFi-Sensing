@@ -1,0 +1,11 @@
+5/5 monday 8 - 5
+5/6 tusday 8 - 5
+----
+5/12 monday 8 - 5
+5/14 wensday 8 - 5
+----
+5/26 monday 8 - 6
+5/27 tusday 8 - 5 (1.5)
+----
+6/2 monday 8 - 5
+
