@@ -1,0 +1,3 @@
+docker run -d --name homeassistant --privileged --net=host \
+  -v ~/homeassistant_config:/config \
+  ghcr.io/home-assistant/home-assistant:stable

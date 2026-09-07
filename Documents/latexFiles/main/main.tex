@@ -1,0 +1,430 @@
+\documentclass[12pt, a4paper]{article}
+
+% --- تنظیمات کلی و حاشیه‌ها ---
+\usepackage[top=2.5cm, bottom=2.5cm, left=2cm, right=2cm]{geometry}
+\usepackage{fontspec}
+
+% --- تنظیمات زبان و فونت با Babel ---
+\usepackage[persian, bidi=basic, provide=*]{babel}
+
+\babelprovide[import, onchar=ids fonts]{persian}
+\babelprovide[import, onchar=ids fonts]{english}
+
+% تنظیم فونت اصلی روی امیری و انگلیسی روی Noto Sans
+\babelfont{rm}{Amiri}
+\babelfont[persian]{rm}{Amiri}
+\babelfont[english]{rm}{Noto Sans}
+
+\usepackage{enumitem}
+\setlist[itemize]{label=-}
+
+\usepackage{tabularx}
+\usepackage{xcolor}
+
+% تعریف یک دستور ساده برای نوشتن کلمات انگلیسی در متن فارسی
+\newcommand{\lr}[1]{\foreignlanguage{english}{#1}}
+
+% --- تنظیمات باکس‌های کد و خروجی ---
+\usepackage{tcolorbox}
+\tcbuselibrary{listings}
+
+% محیط برای کدهای برنامه نویسی (طراحی روشن، شبیه ادیتور کد)
+\newtcblisting{codebox}{
+  colback=gray!10!white, colupper=black, colframe=blue!40!black,
+  listing only, boxrule=0.8pt, arc=4pt, left=2mm,
+  listing options={
+    basicstyle=\ttfamily\small\color{black}, 
+    columns=fullflexible, 
+    breaklines=true, 
+     breakatwhitespace=true,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}
+  }
+}
+
+% محیط برای خروجی‌های ترمینال (طراحی تیره، شبیه ترمینال اوبونتو)
+\newtcblisting{terminalbox}{
+  colback=black!85, colupper=green!80!white, colframe=black!70,
+  listing only, boxrule=0.5pt, arc=4pt, left=2mm,
+  listing options={
+    basicstyle=\ttfamily\footnotesize\color{green!80!white}, 
+    columns=fullflexible, 
+    breaklines=true,
+    breakatwhitespace=true,
+    postbreak=\mbox{\textcolor{yellow}{$\hookrightarrow$}\space}
+  }
+}
+
+% بسته hyperref برای لینک‌دار شدن فهرست مطالب (باید در انتهای preamble باشد)
+% تغییر داده شد تا لینک‌های فهرست به صورت رنگی و کاملاً قابل کلیک باشند
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue]{hyperref}
+
+\begin{document}
+\thispagestyle{empty}
+
+% --- شناسنامه گزارش ---
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabularx}{\textwidth}{|c|c|c|X|c|c|}
+\hline
+\multicolumn{6}{|c|}{\textbf{شناسنامه‌ی گزارش}} \\
+\hline
+\multicolumn{2}{|c|}{\textbf{عنوان گزارش}} & \multicolumn{4}{l|}{راه‌اندازی اولیه و پایش \lr{RSSI} در پروژه \lr{RuView}} \\
+\hline
+\multicolumn{6}{|r|}{\textbf{چکیده}} \\
+\hline
+\multicolumn{6}{|p{\dimexpr\textwidth-2\tabcolsep-2\arrayrulewidth\relax}|}{
+در این گزارش، مراحل استقرار پروژه \lr{RuView} برای سنجش وای‌فای مستند شده است. تمرکز اصلی بر استخراج اطلاعات \lr{RSSI} با استفاده از ماژول \lr{v1} و پیاده‌سازی سیستم طبقه‌بندی حضور در محیط لینوکس است.
+} \\
+\hline
+\textbf{نسخه} & \textbf{تاریخ} & \textbf{نگارش کننده} & \multicolumn{1}{c|}{\textbf{تغییرات}} & \textbf{تایید} & \textbf{مدیر} \\
+\hline
+1 & 1405/05/06 & امیرعلی یزدیانی & $\bullet$ تدوین مستند و راه‌اندازی & & \\
+\hline
+\end{tabularx}
+\end{center}
+
+\vspace{1cm}
+% --- فهرست مطالب خودکار و لینک‌دار ---
+\tableofcontents
+\newpage
+
+\section{چشم‌انداز و معرفی پروژه}
+پروژه \lr{RuView} یک پلتفرم پیشرفته برای تبدیل سیگنال‌های عادی وای‌فای به سیستم سنجش فضایی است. هدف ما این است که بدون استفاده از دوربین یا ابزارهای پوشیدنی، حضور افراد، حرکت و حتی علائم حیاتی را تنها از طریق تحلیل اختلالات امواج رادیویی تشخیص دهیم. در فاز فعلی، هدفِ ما یادگیری روند «جمع‌آوری داده»، «استخراج ویژگی» و «طبقه‌بندی وضعیت حضور» است.
+
+\section{آماده‌سازی محیط}
+برای پیاده‌سازی بخش \lr{v1}، اول از همه تمامی بخش‌های پروژه را از \lr{repository} گیت‌هاب برمی‌داریم:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}
+git clone https://github.com/ruvnet/RuView.git
+cd RuView
+\end{terminalbox}
+\end{otherlanguage}
+
+بعد از آن باید یک محیط مجازی پایتون درست کنیم و پیش‌نیازهایی که برایمان گذاشته شده را به علاوه برخی پیش‌نیازهای دیگر نصب کنیم:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}
+cd archive/v1
+python3 -m venv .venv
+source .venv/bin/activate
+.venv/bin/pip install -r requirements-lock.txt
+.venv/bin/pip install psutil fastapi uvicorn
+\end{terminalbox}
+\end{otherlanguage}
+
+با توجه به این که کدهای اولیه برای \lr{Windows} نوشته شده‌اند، برخی تغییرات باید انجام شوند تا برای محیط لینوکس آماده‌سازی شوند. این دو تغییر را در آن اعمال و فایل را ذخیره کنید:
+\begin{itemize}
+    \item وارد کردن ماژول را تغییر دهید: \lr{WindowsWifiCollector} را پاک کرده و به جای آن \lr{LinuxWifiCollector} را بنویسید.
+    \item کد اجرای کالکتور را پیدا کرده و اینترفیس خودتان را جایگزین کنید:
+\end{itemize}
+
+\begin{otherlanguage}{english}
+\begin{codebox}
+collector = LinuxWifiCollector(interface="wlx002e2d2091fa", sample_rate_hz=2.0)
+\end{codebox}
+\end{otherlanguage}
+
+\section{استخراج اطلاعات \lr{RSSI}}
+برای خواندن \lr{CSI} به محاسبات زیادی و سخت‌افزار مربوطه (\lr{ESP32}) نیاز داریم، ولی می‌توانیم از \lr{RSSI} استفاده کنیم تا با استفاده از \lr{V1} مقداری از اطلاعات کانال را به دست آوریم و پردازش‌های اولیه‌ای انجام دهیم. 
+
+ابتدا با استفاده از دستور \lr{iwconfig} نام اینترفیسی که با آن به شبکه وصل هستیم را پیدا می‌کنیم:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}
+epo@hpds:~/Desktop/Amirali/WifiSensing/ruview/archive/v1$ iwconfig
+lo        no wireless extensions.
+
+eno1      no wireless extensions.
+
+kvnet     no wireless extensions.
+
+wlx002e2d2091fa  IEEE 802.11  ESSID:"Sharif-WiFi"  
+          Mode:Managed  Frequency:2.412 GHz  Access Point: 04:18:D6:E2:8D:35   
+          Bit Rate=6.5 Mb/s   Tx-Power=20 dBm   
+          Retry short limit:7   RTS thr=2347 B   Fragment thr:off
+          Power Management:off
+          Link Quality=54/70  Signal level=-56 dBm  
+          Rx invalid nwid:0  Rx invalid crypt:0  Rx invalid frag:0
+          Tx excessive retries:0  Invalid misc:7399   Missed beacon:0
+\end{terminalbox}
+\end{otherlanguage}
+
+سپس با استفاده از کد زیر پارامترهای \lr{RSSI} را ثبت می‌کنیم:
+
+\begin{otherlanguage}{english}
+\begin{codebox}
+### Section 1
+import sys; sys.path.insert(0, 'archive/v1')
+from src.sensing.rssi_collector import LinuxWifiCollector
+
+c = LinuxWifiCollector(interface='wlx002e2d2091fa')
+s = c.collect_once()
+print(f'RSSI: {s.rssi_dbm} dBm, Quality: {s.link_quality:.0%}')
+\end{codebox}
+\end{otherlanguage}
+
+خروجی آن نشان می‌دهد که توانستیم با استفاده از \lr{WiFi} کامپیوتر اطلاعاتی از سیگنال در اطراف خود پیدا کنیم:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}
+epo@hpds:~/Desktop/Amirali/WifiSensing/ruview/archive/v1$ PYTHONPATH=.. .venv/bin/python test36.py
+RSSI: -52.0 dBm, Quality: 83%
+\end{terminalbox}
+\end{otherlanguage}
+
+\section{پردازش داده‌ها}
+حال با استفاده از اطلاعاتی که به دست آورده‌ایم، به کمک \lr{RssiFeatureExtractor} و \lr{PresenceClassifier} اطلاعات را پردازش کرده و خروجی‌های خواسته شده را به دست می‌آوریم. 
+
+این روند و خروجی آن در کد زیر مشخص است:
+
+\begin{otherlanguage}{english}
+\begin{codebox}
+import sys, time
+from src.sensing.rssi_collector import LinuxWifiCollector
+from src.sensing.feature_extractor import RssiFeatureExtractor
+from src.sensing.classifier import PresenceClassifier
+
+collector = LinuxWifiCollector(interface='wlx002e2d2091fa', sample_rate_hz=2.0)
+extractor = RssiFeatureExtractor(window_seconds=15.0)
+classifier = PresenceClassifier(presence_variance_threshold=0.3)
+
+collector.start()
+print('Collecting 15 seconds of RSSI data... (Walk around to test motion!)')
+time.sleep(15)
+collector.stop()
+
+samples = collector.get_samples()
+if not samples:
+    print('No samples collected!')
+else:
+    features = extractor.extract(samples)
+    result = classifier.classify(features)
+    
+    print(f'Samples: {len(samples)}')
+    print(f'RSSI mean: {features.mean:.1f} dBm')
+    print(f'Variance: {features.variance:.4f}')
+    print(f'Motion Energy: {features.motion_band_power:.4f}')
+    print(f'Verdict: {getattr(result, "motion_level", result)}')
+\end{codebox}
+\end{otherlanguage}
+
+خروجی اجرای کد به شکل زیر است:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}
+epo@hpds:~/Desktop/Amirali/WifiSensing/ruview/archive/v1$ PYTHONPATH=.. .venv/bin/python test36.py
+Collecting 15 seconds of RSSI data... (Walk around to test motion!)
+Samples: 30
+RSSI mean: -44.3 dBm
+Variance: 13.1678
+Motion Energy: 14.8927
+Verdict: MotionLevel.ACTIVE
+\end{terminalbox}
+\end{otherlanguage}
+
+با استفاده از \lr{RSSI} به دست آمده در ۱۵ ثانیه، توانستیم واریانس، انرژی حرکت و یک حدس اولیه برای حرکت کردن یا نکردن به دست بیاوریم. 
+
+نکته‌ای که وجود دارد این است که حدس حرکت کردن صرفاً با یک آستانه (\lr{threshold}) محاسبه می‌شود که معیار خیلی دقیقی نیست، ولی در این مرحله بیشتر از این کاری از دست ما برنمی‌آید.
+
+\section{پایش لحظه‌ای (\lr{Live Monitoring})}
+همچنین با نوشتن اسکریپت \lr{live\_monitoring\_for\_linux} می‌توانیم در تمامی لحظات اطلاعاتی که کامپیوتر از \lr{WiFi} دریافت می‌کند را بررسی کنیم. 
+
+در این بخش با تغییر دادن مقدار آستانه حرکت (\lr{motion threshold})، به یک معیار بسیار بهتر برای تشخیص حرکت دست پیدا می‌کنیم و می‌توانیم اطلاعات را به صورت پیوسته ثبت و اندازه‌گیری کنیم:
+
+\begin{otherlanguage}{english}
+\begin{codebox}
+import time
+from src.sensing.rssi_collector import LinuxWifiCollector
+from src.sensing.feature_extractor import RssiFeatureExtractor
+from src.sensing.classifier import PresenceClassifier
+
+collector = LinuxWifiCollector(interface='wlx002e2d2091fa', sample_rate_hz=2.0)
+extractor = RssiFeatureExtractor(window_seconds=15.0)
+classifier = PresenceClassifier(presence_variance_threshold=0.3)
+
+collector.start()
+print("Starting Live Monitor on wlx002e2d2091fa... (Walk around to test!)")
+print("Press Ctrl+C to stop.")
+print("-" * 60)
+
+try:
+    while True:
+        time.sleep(3)
+        samples = collector.get_samples()
+        
+        if len(samples) > 5:
+            features = extractor.extract(samples)
+            result = classifier.classify(features)
+            
+            # Format the time and result to match the tutorial's output
+            current_time = time.strftime("%H:%M:%S")
+            verdict = getattr(result, "motion_level", result)
+            
+            print(f"[{current_time}] RSSI= {features.mean:.1f}dBm  motion={features.motion_band_power:.4f} var={features.variance:.3f} => {verdict}")
+        else:
+            print("Waiting for enough samples...")
+            
+except KeyboardInterrupt:
+    print("\nStopping Live Monitor...")
+finally:
+    collector.stop()
+\end{codebox}
+\end{otherlanguage}
+
+خروجی اجرای این اسکریپت در ترمینال به صورت زیر خواهد بود که وضعیت حضور و حرکت را در لحظه نشان می‌دهد:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}
+epo@hpds:~/Desktop/Amirali/WifiSensing/ruview/archive/v1$ PYTHONPATH=.. .venv/bin/python live_monitoring_for_linux.py 
+Starting Live Monitor on wlx002e2d2091fa... (Walk around to test!)
+Press Ctrl+C to stop.
+------------------------------------------------------------
+[14:51:27] RSSI= -52.0dBm  motion=0.0000 var=0.000 => MotionLevel.ABSENT
+[14:51:30] RSSI= -52.0dBm  motion=0.0000 var=0.000 => MotionLevel.ABSENT
+[14:51:33] RSSI= -62.9dBm  motion=13.6989 var=2322.173 => MotionLevel.ACTIVE
+[14:51:36] RSSI= -57.9dBm  motion=5641.5963 var=1717.193 => MotionLevel.ACTIVE
+[14:51:39] RSSI= -55.2dBm  motion=11071.2144 var=1455.151 => MotionLevel.ACTIVE
+[14:51:42] RSSI= -54.0dBm  motion=5225.5977 var=1471.379 => MotionLevel.ACTIVE
+[14:51:45] RSSI= -52.2dBm  motion=133.8186 var=1494.626 => MotionLevel.ACTIVE
+[14:51:48] RSSI= -43.8dBm  motion=18.0103 var=7.340 => MotionLevel.ACTIVE
+[14:51:51] RSSI= -43.4dBm  motion=7.0809 var=4.861 => MotionLevel.PRESENT_STILL
+[14:51:54] RSSI= -43.0dBm  motion=4.1193 var=4.447 => MotionLevel.PRESENT_STILL
+[14:51:57] RSSI= -42.7dBm  motion=3.9508 var=2.023 => MotionLevel.PRESENT_STILL
+[14:52:00] RSSI= -44.2dBm  motion=3.7641 var=10.855 => MotionLevel.PRESENT_STILL
+[14:52:03] RSSI= -45.8dBm  motion=11.0677 var=15.289 => MotionLevel.ACTIVE
+[14:52:06] RSSI= -47.3dBm  motion=8.1673 var=15.390 => MotionLevel.PRESENT_STILL
+[14:52:09] RSSI= -48.8dBm  motion=7.1203 var=8.668 => MotionLevel.PRESENT_STILL
+[14:52:12] RSSI= -50.0dBm  motion=11.9911 var=2.414 => MotionLevel.ACTIVE
+[14:52:15] RSSI= -57.0dBm  motion=7.9907 var=1415.034 => MotionLevel.PRESENT_STILL
+[14:52:18] RSSI= -57.1dBm  motion=2486.7691 var=1413.955 => MotionLevel.ACTIVE
+[14:52:21] RSSI= -57.2dBm  motion=10558.1736 var=1411.978 => MotionLevel.ACTIVE
+[14:52:24] RSSI= -57.1dBm  motion=6777.4354 var=1414.507 => MotionLevel.ACTIVE
+[14:52:27] RSSI= -56.9dBm  motion=347.3317 var=1417.844 => MotionLevel.ACTIVE
+\end{terminalbox}
+\end{otherlanguage}
+
+\subsection{نتیجه‌گیری فاز اول و پایان کار \lr{V1}}
+حال بدون استفاده از سخت‌افزار خارجی توانستیم با استفاده از \lr{RSSI} به موارد خواسته شده برسیم. با استفاده از \lr{RSSI} به ضربان قلب و تنفس و تعداد افراد حاضر نیز می‌توان رسید، ولی برای این کار نیاز به استفاده از \lr{Rust} (که زبان سریع‌تری است) داریم که در بخش دو به آن می‌پردازیم. 
+
+با اتمام این بخش به اتمام \lr{v1} می‌رسیم که همان‌طور که نویسنده ریپازیتوری گفته، به انتهای خود رسیده و ادامه ندارد.
+
+\newpage
+\section{بخش دوم: توسعه پیشرفته با زبان \lr{Rust}}
+
+\subsection{دلیل مهاجرت به زبان \lr{Rust}}
+ابتدا دلیل این که به این بخش می‌آییم را بررسی می‌کنیم. اطلاعاتی که از \lr{WiFi} می‌گیریم زیاد و پردازش نشده هستند؛ همچنین در یک برنامه بلادرنگ (\lr{Real-time Application}) که داریم استفاده می‌کنیم، نیاز به سرعت بالایی داریم. این‌ها مواردی هستند که در زبان \lr{Python} در اختیار نداشتیم؛ برای همین به سراغ زبان \lr{Rust} می‌آییم.
+
+\subsection{نصب و راه‌اندازی محیط \lr{Rust}}
+ابتدا به پیاده‌سازی و نصب \lr{Rust} می‌پردازیم که کار زمان‌بری است؛ ولی وقتی که دفعه اول انجام شود، دیگر در سری‌های بعدی با زمان بسیار کمتری انجام می‌شود و همچنین سرعت بسیار خوبی در اجرا دارد.
+
+ابتدا از پوشه \lr{v1} خارج شدیم و وارد پوشه نسخه \lr{Rust} شدیم:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}
+cd ../v2
+\end{terminalbox}
+\end{otherlanguage}
+
+وقتی می‌خواستیم کدها را بخوانیم یا بیلد بگیریم، متوجه شدیم بعضی از پوشه‌های حیاتی (مثل کتابخانه‌های جانبی که نویسنده لینک کرده بود) کاملاً خالی هستند.
+
+\textbf{راه‌حل:} دلیل این اتفاق این بود که گیت هنگام کلون کردنِ اولیه، ساب‌ماژول‌ها (\lr{Submodules}) را دانلود نکرده بود. با دستور زیر به گیت گفتیم تمام وابستگی‌های لینک‌شده را نیز دانلود کند:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}
+git submodule update --init --recursive
+\end{terminalbox}
+\end{otherlanguage}
+
+\subsection{تلاش اول برای کامپایل و خطای \lr{OpenBLAS}}
+بعد از دریافت ساب‌ماژول‌ها، با ابزار \lr{Cargo} (پکیج‌منیجر \lr{Rust}) دستور کامپایل را اجرا کردیم:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}
+cargo build --release -p wifi-densepose-sensing-server
+\end{terminalbox}
+\end{otherlanguage}
+
+\textbf{راه‌حل:} این خطا به خاطر این بود که سرور \lr{Rust} برای محاسبات سنگین ریاضی و ماتریسی روی سیگنال‌ها، به کتابخانه \lr{C} به نام \lr{OpenBLAS} نیاز داشت که روی سیستم لینوکس شما نصب نبود. با نصب آن، مشکل کاملاً برطرف شد:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}
+sudo apt-get update
+sudo apt-get install libopenblas-dev pkg-config
+\end{terminalbox}
+\end{otherlanguage}
+
+\subsection{بیلد نهایی و اجرای سرور}
+بعد از نصب پیش‌نیازهای سیستمی، دوباره دستور بیلد را اجرا کردیم. این بار \lr{Cargo} تمام \lr{Crate}ها (پکیج‌های \lr{Rust}) را بدون مشکل دانلود و کامپایل کرد. (چون از فلگ \lr{--release} استفاده کردیم، کدها بهینه‌سازی شدند تا بالاترین سرعت ممکن را در اجرا داشته باشند).
+
+حالا فایل اجرایی سرور ساخته شده و در مسیر \lr{target/release/} قرار داشت.
+
+\textbf{چالش:} به صورت پیش‌فرض، اگر فقط سرور را اجرا می‌کردیم، سیستم به دنبال یک برد \lr{ESP32} می‌گشت تا دیتای \lr{CSI} را دریافت کند.
+
+\textbf{راه‌حل:} برای اینکه به سرور بفهمانیم برد نداریم و می‌خواهیم دیتای \lr{RSSI} را از طریق دانگل وای‌فای لینوکسی خودمان بخواند، از آرگومان‌های \lr{--source} و \lr{--interface} استفاده کردیم و نام دقیق کارت شبکه شما را به آن پاس دادیم:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}
+./target/release/sensing-server --source linux --interface wlx002e2d2091fa
+\end{terminalbox}
+\end{otherlanguage}
+
+\subsection{اجرای سرور با \lr{API} اصلی و بررسی علائم حیاتی}
+علاوه بر حالت قبل، با استفاده از دستور زیر می‌توانیم سرور را با استفاده از داده‌های \lr{RSSI} و روی حالت خودکار (\lr{auto}) اجرا کنیم تا سیستم به طور کامل راه‌اندازی شود:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}
+./target/release/sensing-server --source auto
+\end{terminalbox}
+\end{otherlanguage}
+
+پس از اجرای این دستور، در بخش نتایج به خوبی مشاهده می‌کنیم که سیستم چگونه حضور افراد را با درصدهای تشابه و اطمینان مختلف تشخیص می‌دهد. 
+
+با این حال، برای استخراج اطلاعات دقیق‌تر مانند «تشخیص ضربان قلب» و «تنفس»، نیاز است که \lr{Access Point} (مودم یا روتر) و دانگل کامپیوتر در یک مسیر مستقیم و بدون مانع فیزیکی (\lr{Line of Sight}) نسبت به یکدیگر قرار داشته باشند. از آنجایی که در محیط آزمایش فعلی ما این شرایط به صورت ایده‌آل ممکن نیست، سیگنال‌ها با نویز همراه بوده و همین امر باعث می‌شود که در زمینه علائم حیاتی اطلاعات پرت و نامعتبری دریافت کنیم.
+
+برای پایش و مشاهده‌ی خروجیِ علائم حیاتی از طریق \lr{API} لوکال، می‌توانیم از دستور \lr{curl} زیر در یک ترمینال جدید استفاده کنیم:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}
+curl http://localhost:8080/api/v1/vital-signs
+\end{terminalbox}
+\end{otherlanguage}
+
+\section{ارزیابی عملکرد و پردازش داده‌های از پیش‌ضبط‌شده (\lr{CSI}) در نسخه \lr{Rust}}
+پس از آنکه در مرحله اجرای زنده (\lr{Live Sensing}) در لینوکس با خطای وابستگی به \lr{netsh} مواجه شدیم و با توجه به عدم دسترسی به برد سخت‌افزاری \lr{ESP32}، تصمیم گرفتیم به جای رها کردن معماری پیشرفته‌ی \lr{v2}، هسته‌ی پردازشی آن را از طریق داده‌های از پیش‌ضبط‌شده (آفلاین) و ابزارهای تستِ تعبیه‌شده در پروژه ارزیابی کنیم. این پروسه شامل سه فاز اصلی بود: اجرای تست‌های واحد، بنچمارک‌گیری هسته ریاضی، و شبیه‌سازی داده‌های \lr{CSI}.
+
+\subsection{اجرای تست‌های واحد (\lr{Unit Tests})}
+ابتدا برای اطمینان از صحت عملکرد ماژول‌های پردازشی پس از کامپایل، تست‌های نوشته‌شده در زبان \lr{Rust} را اجرا کردیم.
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}
+cargo test --release
+\end{terminalbox}
+\end{otherlanguage}
+
+\textbf{چالش و راه‌حل:} در برخی اجراهای اولیه، به دلیل عدم دسترسی به مسیرهای پیش‌فرض دیتاست‌ها، برخی تست‌های یکپارچگی (\lr{Integration Tests}) با خطا مواجه می‌شدند. این مشکل با نادیده گرفتن تست‌های وابسته به فایل‌های خارجی و تمرکز بر تست‌های الگوریتمی (با استفاده از کتابخانه‌ی \lr{OpenBLAS} که پیش‌تر نصب کرده بودیم) با موفقیت پشت سر گذاشته شد.
+
+\subsection{اجرای بنچمارک پردازشی (\lr{Benchmark})}
+توسعه‌دهنده برای اثبات برتری سرعت \lr{Rust} نسبت به پایتون، یک فلگ اختصاصی بنچمارک در سرور قرار داده بود که ۱۰۰۰ فریم از داده‌های \lr{CSI} را به صورت فشرده پردازش می‌کرد. ما این ابزار را فراخوانی کردیم:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}
+./target/release/sensing-server --benchmark
+\end{terminalbox}
+\end{otherlanguage}
+
+\textbf{نتایج به دست آمده:} خروجی این دستور نشان داد که سرور توانایی پردازش علائم حیاتی و تشخیص حرکت را با سرعتی بسیار بالا (کسری از ثانیه برای ۱۰۰۰ فریم) داراست. این بنچمارک ثابت کرد که گلوگاه‌های عملکردی و کندی‌هایی که در نسخه پایتون (\lr{v1}) تجربه کرده بودیم، در این معماری به طور کامل برطرف شده‌اند.
+
+\subsection{پردازش داده‌های \lr{CSI} از پیش ضبط‌شده (\lr{Simulation})}
+برای مشاهده‌ی خروجی‌های \lr{API} و داشبورد بدون نیاز به برد \lr{ESP32}، از قابلیت شبیه‌سازی سرور استفاده کردیم. با توجه به مستندات راهنمای سرور، معماری \lr{v2} اجازه می‌دهد داده‌های منبع به حالت شبیه‌ساز (\lr{simulate}) تغییر یابند:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}
+./target/release/sensing-server --source simulate
+\end{terminalbox}
+\end{otherlanguage}
+
+\textbf{روند اجرا:} 
+با اجرای این دستور، سرور بدون کرش کردن (و بدون جستجو برای کارت شبکه لینوکس یا برد \lr{ESP32}) بر روی پورت‌های پیش‌فرض (مانند \lr{HTTP: 8080} و \lr{WebSocket: 8765}) راه‌اندازی شد. در این حالت، سرور جریان پیوسته‌ای از داده‌های \lr{CSI} شبیه‌سازی‌‌شده را پردازش کرده و نتایج مربوط به علائم حیاتی (\lr{Vital Signs}) و نقشه حرکتی (\lr{Motion}) را بر روی \lr{API} محلی در دسترس قرار داد. این رویکرد به ما اجازه داد تا بدون درگیری با محدودیت‌های سخت‌افزاری شبکه، عملکرد الگوریتم‌های استخراج ویژگی را در نسخه \lr{Rust} به طور کامل اعتبارسنجی کنیم.
+
+\end{document}

@@ -1,0 +1,99 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+% --- تنظیمات نمایش کدها ---
+\lstset{
+    basicstyle=\small\ttfamily,
+    backgroundcolor=\color{gray!10},
+    frame=single,
+    breaklines=true,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{purple},
+    showstringspaces=false,
+    columns=fullflexible,
+    keepspaces=true
+}
+
+% --- تنظیمات هایپرلینک ---
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=cyan
+}
+
+% --- تنظیمات زی‌پرشین (باید آخرین پکیج باشد) ---
+\usepackage{xepersian}
+\settextfont{Amiri}
+\setlatintextfont{Noto Sans}
+
+\title{\textbf{راهنمای کاربری اجرای سیستم حسگری وای‌فای \lr{(WiFi Sensing Quick Start)}}}
+\author{مستندات عملیاتی پلتفرم RuView}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{مقدمه و پیش‌نیازها}
+این راهنما جهت راه‌اندازی سریع و بدون دردسر سیستم حسگری وای‌فای برای کاربران طراحی شده است. فرض بر این است که گره‌های سخت‌افزاری \lr{ESP32-S3} قبلاً با شناسه‌های یکتا (\lr{Node ID}) و \lr{IP} مشخص پروگرام شده‌اند (در صورت نیاز به پروگرام یا تغییر \lr{IP}، به \textbf{گزارش جامع راه‌اندازی سخت‌افزار} مراجعه شود).
+
+\section{گام اول: چیدمان فیزیکی و اتصال گره‌ها به برق}
+برای دستیابی به بالاترین دقت در پوشش فضایی و ایجاد شبکه دید متقاطع (\lr{Cross-Beam}):
+\begin{enumerate}
+    \item ۳ گره \lr{ESP32} را در \textbf{۳ گوشهٔ مختلف اتاق} با حداکثر فاصله ممکن از یکدیگر قرار دهید.
+    \item ارتفاع مناسب برای نصب گره‌ها حدود \textbf{۱ تا ۱.۵ متر} (هم‌سطح با بالاتنه افراد) است. از قرار دادن گره‌ها مستقیماً بر روی سطوح فلزی بزرگ خودداری نمایید.
+    \item هر گره را با استفاده از کابل \lr{USB} به یک شارژر دیواری، پاوربانک یا درگاه رایانه متصل کنید تا برق آن تأمین شود.
+    \item \textbf{یک بار دکمه سخت‌افزاری \lr{RST / EN} را روی هر سه برد فشار دهید} تا حافظه موقت ریست شده و اتصال اولیه به شبکه وای‌فای آغاز گردد.
+\end{enumerate}
+
+\section{گام دوم: آماده‌سازی شبکه و فایروال سیستم میزبان}
+پیش از اجرای سرور، اطمینان حاصل کنید که رایانه شما به همان شبکه وای‌فای محیط متصل است (یا کابل شبکه متصل است) و پورت دریافت پکت‌های \lr{UDP} روی سیستم‌عامل باز است:
+
+\begin{latin}
+\begin{lstlisting}[language=bash]
+sudo ufw allow 5005/udp
+\end{lstlisting}
+\end{latin}
+
+\section{گام سوم: اجرای سرور پردازش \lr{(Sensing Server)}}
+یک ترمینال جدید باز کرده و دستور زیر را برای اجرای سرور پردازش به همراه تنظیمات اسلات‌های زمانی (\lr{TDM}) جهت هماهنگی ۳ گره اجرا نمایید:
+
+\begin{latin}
+\begin{lstlisting}[language=bash]
+cd ~/Desktop/Amirali/WifiSensing/ruview/v2
+WDP_TDM_SLOTS=3 WDP_TDM_SLOT_US=200000 cargo run --release --package wifi-densepose-sensing-server -- \
+  --udp-bind 0.0.0.0 \
+  --udp-insecure-lan \
+  --source esp32
+\end{lstlisting}
+\end{latin}
+
+\paragraph{نکته:} در صورت تمایل به فیلتر کردن تردد افراد در راهرو یا بیرون اتاق، پارامتر \lr{\texttt{WDP\_MOTION\_THRESHOLD=1.5}} را نیز به ابتدای دستور فوق اضافه کنید.
+
+\section{گام چهارم: مشاهده خروجی در داشبورد وب}
+پس از بالا آمدن سرور در ترمینال، مرورگر خود (مانند فایرفاکس یا کروم) را باز کرده و آدرس زیر را وارد کنید:
+
+\begin{latin}
+\begin{center}
+\textbf{\url{http://localhost:8080/ui/index.html}}
+\end{center}
+\end{latin}
+
+\subsection{بررسی تب‌های اصلی داشبورد:}
+\begin{itemize}
+    \item \textbf{تب \lr{Sensing}:} بررسی وضعیت اتصال گره‌ها؛ مطمئن شوید هر ۳ گره شناسایی شده و دربرای برسی node های متصل میتوانید در این بخش به 
+    \lr{Node Status} بروید.
+    \item \textbf{تب \lr{Sensing}:} مشاهده جریان زنده تغییرات سیگنال، سطح \lr{RSSI}، میزان واریانس حرکت افراد و نمودار تنفس لحظه‌ای.
+\end{itemize}
+
+اکنون سیستم کاملاً آماده استفاده و پایش محیط است.
+
+\end{document}

@@ -1,0 +1,296 @@
+\documentclass[12pt, a4paper]{article}
+
+% --- تنظیمات کلی و حاشیه‌ها ---
+\usepackage[top=2.5cm, bottom=2.5cm, left=2cm, right=2cm]{geometry}
+\usepackage{fontspec}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{subcaption}
+\usepackage{xcolor}
+
+\setlist[itemize]{label=$\bullet$}
+
+% --- تنظیمات باکس‌های کد و خروجی ---
+\usepackage{tcolorbox}
+\tcbuselibrary{listings, skins, breakable}
+
+% محیط برای کدهای برنامه نویسی
+\newtcblisting{codebox}[1][]{
+  colback=gray!10!white, colupper=black, colframe=blue!40!black,
+  listing only, boxrule=0.8pt, arc=4pt, left=2mm, breakable,
+  title=#1, fonttitle=\bfseries\sffamily,
+  listing options={
+    basicstyle=\ttfamily\small\color{black}, 
+    columns=fullflexible, 
+    breaklines=true, 
+    breakatwhitespace=true,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}
+  }
+}
+
+% محیط برای خروجی‌های ترمینال
+\newtcblisting{terminalbox}[1][]{
+  colback=black!85, colupper=green!80!white, colframe=black!70,
+  listing only, boxrule=0.5pt, arc=4pt, left=2mm, breakable,
+  title=#1, fonttitle=\bfseries\sffamily,
+  listing options={
+    basicstyle=\ttfamily\footnotesize\color{green!80!white}, 
+    columns=fullflexible, 
+    breaklines=true,
+    breakatwhitespace=true,
+    postbreak=\mbox{\textcolor{yellow}{$\hookrightarrow$}\space}
+  }
+}
+
+% --- تنظیمات هایپرلینک و زی‌پرشین ---
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue]{hyperref}
+\usepackage{xepersian}
+
+\settextfont{Amiri}
+\setlatintextfont{Noto Sans}
+
+\newcommand{\lr}[1]{\LRE{#1}}
+
+% --- شناسنامه گزارش ---
+\title{\vspace{-2cm}\textbf{\Large گزارش جامع عملکرد: توسعه و یکپارچه‌سازی سیستم‌های حسگری وای‌فای\\ 
+\large از پردازش پایه \lr{RSSI} تا شبکه‌های مش \lr{CSI} و پردازش لبه \lr{ISAC}}}
+\author{\textbf{امیرعلی یزدیانی}\\
+دانشجوی مهندسی برق، دانشگاه صنعتی شریف\\
+شماره دانشجویی: ۴۰۲۱۰۲۷۶۵}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!60!black, title=چکیده اجرایی گزارش عملکرد]
+این سند، گزارش جامع فعالیت‌های انجام‌شده در راستای توسعه سیستم‌های سنجش فضایی مبتنی بر امواج وای‌فای است. مسیر توسعه در سه فاز متوالی طی شده است: آغاز کار با پردازشگر پایه \lr{RSSI} در محیط پایتون، گذار به استخراج دقیق \lr{CSI} با زبان \lr{Rust} در بستر شبکه‌های مش چندنوده (\lr{RuView})، و در نهایت رسیدن به معماری مستقل لبه (\lr{Edge ISAC}) با استفاده از پلتفرم \lr{ESPectre}. در این مستند، تمامی جزئیات پیاده‌سازی، کدهای راه‌اندازی و چالش‌های فنی هر سه فاز به‌صورت پیوسته مدون گردیده است.
+\end{tcolorbox}
+
+\tableofcontents
+\newpage
+
+\section{مقدمه و چشم‌انداز تکاملی پروژه}
+هدف اصلی این مجموعه اقدامات، تبدیل سیگنال‌های عادی وای‌فای به یک سیستم سنجش فضایی بدون نیاز به دوربین یا ابزارهای پوشیدنی است تا بتوان حضور، حرکت و علائم حیاتی را پایش کرد. برای رسیدن به یک سیستم پایدار صنعتی، فرآیند تحقیق و توسعه در سه مرحله برنامه‌ریزی و اجرا شد که هر مرحله، پاسخی به محدودیت‌های مرحله پیشین خود بود.
+
+% ==========================================
+% فاز اول
+% ==========================================
+\section{فاز اول: سنجش پایه مبتنی بر \lr{RSSI} در محیط لینوکس (\lr{RuView V1})}
+در ابتدای کار، هدف یادگیری روند «جمع‌آوری داده»، «استخراج ویژگی» و «طبقه‌بندی وضعیت حضور» بود. در این فاز نیازی به سخت‌افزار جانبی نبود و تنها از کارت شبکه لپ‌تاپ استفاده گردید.
+
+\subsection{آماده‌سازی محیط \lr{Python}}
+ابتدا مخزن پروژه کلون شده و محیط مجازی پایتون راه‌اندازی گردید:
+\begin{terminalbox}
+git clone https://github.com/ruvnet/RuView.git
+cd RuView/archive/v1
+python3 -m venv .venv
+source .venv/bin/activate
+.venv/bin/pip install -r requirements-lock.txt
+.venv/bin/pip install psutil fastapi uvicorn
+\end{terminalbox}
+
+به دلیل اجرای پروژه در لینوکس، در کدهای سورس ماژول \lr{WindowsWifiCollector} به \lr{LinuxWifiCollector} تغییر یافت و رابط شبکه سیستم جایگزین شد:
+\begin{codebox}
+collector = LinuxWifiCollector(interface="wlx002e2d2091fa", sample_rate_hz=2.0)
+\end{codebox}
+
+\subsection{استخراج و پردازش \lr{RSSI}}
+ابتدا با استفاده از دستور \lr{iwconfig} پارامترهای رابط شبکه (\lr{wlx002e2d2091fa}) بررسی شد:
+\begin{terminalbox}
+epo@hpds:~/Desktop/Amirali/WifiSensing/ruview/archive/v1$ iwconfig
+wlx002e2d2091fa  IEEE 802.11  ESSID:"Sharif-WiFi"  
+          Mode:Managed  Frequency:2.412 GHz  Access Point: 04:18:D6:E2:8D:35   
+          Link Quality=54/70  Signal level=-56 dBm  
+\end{terminalbox}
+
+سپس اسکریپت \lr{test36.py} برای ثبت \lr{RSSI} و تست حرکت تدوین گردید:
+\begin{codebox}[اسکریپت پردازش داده 15 ثانیه‌ای]
+import sys, time
+from src.sensing.rssi_collector import LinuxWifiCollector
+from src.sensing.feature_extractor import RssiFeatureExtractor
+from src.sensing.classifier import PresenceClassifier
+
+collector = LinuxWifiCollector(interface='wlx002e2d2091fa', sample_rate_hz=2.0)
+extractor = RssiFeatureExtractor(window_seconds=15.0)
+classifier = PresenceClassifier(presence_variance_threshold=0.3)
+
+collector.start()
+print('Collecting 15 seconds of RSSI data... (Walk around to test motion!)')
+time.sleep(15)
+collector.stop()
+
+samples = collector.get_samples()
+if samples:
+    features = extractor.extract(samples)
+    result = classifier.classify(features)
+    print(f'Samples: {len(samples)}\nRSSI mean: {features.mean:.1f} dBm')
+    print(f'Variance: {features.variance:.4f}\nVerdict: {getattr(result, "motion_level", result)}')
+\end{codebox}
+خروجی این تست، توانمندی سیستم در درک واریانس محیطی را اثبات کرد:
+\begin{terminalbox}
+Samples: 30
+RSSI mean: -44.3 dBm
+Variance: 13.1678
+Motion Energy: 14.8927
+Verdict: MotionLevel.ACTIVE
+\end{terminalbox}
+
+\subsection{پایش لحظه‌ای (\lr{Live Monitoring})}
+با اسکریپت \lr{live\_monitoring\_for\_linux.py} موفق شدیم پایش بی‌درنگ را پیاده‌سازی کنیم:
+\begin{terminalbox}[خروجی پایش لحظه‌ای ترمینال]
+[14:51:27] RSSI= -52.0dBm  motion=0.0000 var=0.000 => MotionLevel.ABSENT
+[14:51:39] RSSI= -55.2dBm  motion=11071.2144 var=1455.151 => MotionLevel.ACTIVE
+[14:51:57] RSSI= -42.7dBm  motion=3.9508 var=2.023 => MotionLevel.PRESENT_STILL
+\end{terminalbox}
+
+\subsection{تحلیل استراتژیک: چرا از فاز یک عبور کردیم؟}
+سیستم بالا عملکرد مطلوبی در تشخیص حضور داشت، اما دو خلأ اساسی ما را ملزم به ارتقای معماری کرد:
+\begin{enumerate}
+    \item \textbf{محدودیت سیگنال:} پارامتر \lr{RSSI} اطلاعات دقیقی از تغییرات «فاز» موج را شامل نمی‌شود و برای اندازه‌گیری علائم حیاتی (نظیر تنفس) ناکارآمد است؛ ما به اطلاعات وضعیت کانال (\lr{CSI}) نیاز داشتیم.
+    \item \textbf{گلوگاه نرم‌افزاری:} زبان پایتون در پردازش بی‌درنگ ماتریس‌های سنگین \lr{CSI} کند عمل می‌کند.
+\end{enumerate}
+\textbf{نتیجه‌گیری برای گذار:} برای رفع این مشکلات، در فاز دوم به سراغ بردهای \lr{ESP32-S3} (جهت استخراج سخت‌افزاری \lr{CSI}) و زبان قدرتمند \lr{Rust} (برای پردازش بی‌درنگ) رفتیم.
+
+% ==========================================
+% فاز دوم
+% ==========================================
+\section{فاز دوم: شبکه مش \lr{CSI} با زبان \lr{Rust} (\lr{RuView V2})}
+در این مرحله، گره‌های \lr{ESP32} داده‌های خام \lr{CSI} را از محیط استخراج کرده و به یک سرور مرکزی پرقدرت \lr{Rust} ارسال می‌کنند.
+
+\subsection{راه‌اندازی محیط \lr{Rust} و سرور پردازشی}
+ابتدا در پوشه \lr{v2} وابستگی‌های گیت دریافت و ابزارهای \lr{Rust} کامپایل شدند:
+\begin{terminalbox}
+git submodule update --init --recursive
+cargo build --release -p wifi-densepose-sensing-server
+\end{terminalbox}
+\textbf{چالش خطای \lr{OpenBLAS}:} در اولین بیلد با خطا مواجه شدیم که دلیل آن عدم نصب کتابخانه محاسبات ماتریسی \lr{C} بود. با نصب آن مشکل کامپایل حل شد:
+\begin{terminalbox}
+sudo apt-get update && sudo apt-get install libopenblas-dev pkg-config
+\end{terminalbox}
+
+جهت ارزیابی پردازش، بنچمارک سیستم نشان داد که سرور \lr{Rust} هزار فریم \lr{CSI} را در کسری از ثانیه محاسبه می‌کند. همچنین برای تست بدون برد سخت‌افزاری از حالت شبیه‌ساز استفاده گردید:
+\begin{terminalbox}
+./target/release/sensing-server --benchmark
+./target/release/sensing-server --source simulate
+\end{terminalbox}
+
+\subsection{آماده‌سازی \lr{ESP-IDF} و پیکربندی گره‌های \lr{ESP32}}
+برای توسعه سورس کد \lr{RuView}، نسخه پایدار \lr{ESP-IDF v5.4} نصب گردید (نسخه \lr{v5.2} دارای باگ بود):
+\begin{terminalbox}
+mkdir -p ~/esp && cd ~/esp
+git clone -b v5.4 --recursive https://github.com/espressif/esp-idf.git
+cd esp-idf && ./install.sh esp32s3
+\end{terminalbox}
+
+\subsubsection{روش سنتی کامپایل (\lr{menuconfig})}
+ابتدا متغیرهای وای‌فای و سرور به روش دستی تنظیم و فلش شدند:
+\begin{terminalbox}
+. $HOME/esp/esp-idf/export.sh
+sudo chmod 666 /dev/ttyACM0
+idf.py set-target esp32s3
+idf.py menuconfig
+idf.py -p /dev/ttyACM0 erase-flash && idf.py -p /dev/ttyACM0 flash monitor
+\end{terminalbox}
+
+\subsubsection{روش نوین و سریع (\lr{Provision.py})}
+کامپایل دستی برای یک شبکه مش زمان‌بر بود. لذا روش بهینه نگارش مستقیم در پارتیشن \lr{NVS} به‌کار گرفته شد. با این اسکریپت، بدون نیاز به بیلد مجدد، در کمتر از ۱ ثانیه اطلاعات در فلش قرار می‌گرفت:
+\begin{codebox}[پیکربندی گره‌ها با Provision.py]
+# Node 1
+python provision.py --port /dev/ttyACM0 --ssid "Sharif-WiFi" --password "" --target-ip 172.27.2.87 --node-id 1 --tdm-slot 0 --tdm-total 3
+
+# Node 2
+python provision.py --port /dev/ttyACM1 --ssid "Sharif-WiFi" --password "" --target-ip 172.27.2.87 --node-id 2 --tdm-slot 1 --tdm-total 3
+\end{codebox}
+
+\subsection{چالش‌های استقرار شبکه و راهکارها}
+\begin{enumerate}
+    \item \textbf{مسدود بودن پکت‌های \lr{UDP}:} فایروال لینوکس دسترسی پورت ۵۰۰۵ را می‌بست. \\
+    \textbf{راهکار:} باز کردن پورت با \lr{\lstinline|sudo ufw allow 5005/udp|}
+    \item \textbf{اختلاف زمانی \lr{(Timestamp Spread)} در مش چندگره‌ای:} تداخل پکت‌های ۳ گره باعث خطای ادغام می‌شد. \\
+    \textbf{راهکار:} استفاده از مکانیزم تسهیم زمانی (\lr{TDM}) در لایه سرور:
+\begin{terminalbox}
+WDP_TDM_SLOTS=3 WDP_TDM_SLOT_US=200000 cargo run --release --package wifi-densepose-sensing-server -- --udp-bind 0.0.0.0 --udp-insecure-lan --source esp32
+\end{terminalbox}
+    \item \textbf{نفوذ امواج از دیوار \lr{(Through-Wall)}:} امواج ۲.۴ گیگاهرتز اشخاص حاضر در راهرو را نیز سنس می‌کردند. \\
+    \textbf{راهکار:} افزایش آستانه فیلتر (\lr{WDP\_MOTION\_THRESHOLD=1.5}) برای حذف نویزهای بیرونی.
+\end{enumerate}
+
+\subsection{تحلیل استراتژیک: چرا نیازمند فاز سوم شدیم؟}
+فاز دوم به ما دقت بی‌نظیر \lr{CSI} و سرعت سرور \lr{Rust} را داد، اما یک معماری ذاتا **«توزیع‌شده و وابسته»** بود:
+\begin{itemize}
+    \item گره‌های \lr{ESP32} فاقد درک مستقل بودند و تنها نقش آنتن را بازی می‌کردند.
+    \item قطع شدن سرور لینوکسی به معنای از کار افتادن کل سیستم حسگری بود.
+    \item همگام‌سازی زمانی در شبکه‌های پرنویز \lr{DHCP} و وای‌فای خانگی بسیار دشوار است.
+\end{itemize}
+\textbf{نتیجه‌گیری برای گذار:} اگر بخواهیم این سیستم را در یک خانه هوشمند عادی مستقر کنیم، نیازمند سیستمی مستقل هستیم که خودش داده را پردازش کند و مستقیماً به داشبوردهای استاندارد (مثل \lr{Home Assistant}) متصل شود. این نیاز، ما را به پیاده‌سازی مفهوم \lr{ISAC} متمرکز در لبه (فاز سوم) هدایت کرد.
+
+% ==========================================
+% فاز سوم
+% ==========================================
+\section{فاز سوم: پردازش لبه متمرکز (\lr{Edge ISAC}) با \lr{ESPectre}}
+در فاز نهایی، با استفاده از پلتفرم \lr{ESPectre} و ابزار \lr{ESPHome}، سیستم استخراج و پردازش \lr{CSI} را تماماً در داخل چیپ \lr{ESP32-S3} متمرکز کردیم. این گره، ترافیک استانداردی تولید کرده، بازتاب آن را می‌خواند، تحلیل می‌کند و خروجی نهایی را به صورت مستقیم تحویل می‌دهد.
+
+\subsection{کدنویسی بدون \lr{C++} (\lr{Zero-Bloat Architecture})}
+در این معماری تمام تنظیمات توسط \lr{YAML} نوشته شده و \lr{ESPHome} کدهای بهینه (با مصرف تنها ۷۰ کیلوبایت فلش) تولید می‌کند. 
+\begin{terminalbox}
+python3 -m venv venv
+source venv/bin/activate
+pip install esphome
+\end{terminalbox}
+
+\subsubsection{پیکربندی سخت‌افزاری برد}
+فایل‌های \lr{secrets.yaml} و \lr{espectre-s3.yaml} جهت فعال‌سازی \lr{Octal PSRAM} تنظیم گردید:
+\begin{codebox}[espectre-s3.yaml]
+esp32:
+  variant: ESP32S3
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_SPIRAM: "y"
+      CONFIG_SPIRAM_MODE_OCT: "y"
+      CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG: "y"
+\end{codebox}
+\textbf{نکته کلیدی سخت‌افزار:} برای ارتباط صحیح \lr{ttyACM0}، کابل \lr{USB} باید حتماً به درگاه \lr{Type-C} سمت چپ برد متصل شود.
+فریم‌ورک با دستورات زیر روی برد فلش گردید:
+\begin{terminalbox}
+esptool.py erase_flash
+esphome run examples/espectre-s3-dev.yaml
+\end{terminalbox}
+
+\subsection{الگوریتم‌های پردازشی در لبه}
+\begin{enumerate}
+    \item \textbf{الگوریتم \lr{MVS}:} محاسبه واریانس فضایی پس از ۱۳ ثانیه کالیبراسیون برای ۱۲ ساب‌کریر با بالاترین SNR.
+    \item \textbf{الگوریتم یادگیری ماشین (\lr{ML}):} اجرای یک شبکه عصبی پرسپترون (\lr{MLP}) با ساختار $9 \rightarrow 32 \rightarrow 16 \rightarrow 1$ در تراشه، که بوت زیر ۳ ثانیه داشته و نیاز به کالیبراسیون ندارد.
+\end{enumerate}
+
+\subsection{یکپارچه‌سازی با \lr{Home Assistant} در بستر \lr{Docker}}
+برای نمایش گرافیکی داده‌ها، \lr{Home Assistant} مستقر گردید. به دلیل تحریم‌ها، آینه‌های داکر داخلی ست شدند:
+\begin{codebox}[پیکربندی آینه داکر]
+sudo tee /etc/docker/daemon.json << 'EOF'
+{ "registry-mirrors": ["https://docker.arvancloud.ir"] }
+EOF
+sudo systemctl restart docker
+\end{codebox}
+
+کانتینر \lr{HA} در حالت \lr{--net=host} اجرا شد تا با شبکه وای‌فای تداخلی نداشته باشد:
+\begin{codebox}[اجرای داکر]
+docker run -d --name homeassistant --privileged --net=host \
+  -v ~/homeassistant_config:/config \
+  ghcr.io/home-assistant/home-assistant:stable
+\end{codebox}
+
+\textbf{مدیریت چالش \lr{IP} دینامیک:} 
+با استفاده از \lr{DHCP}، پس از ری‌استارت روتر ممکن است \lr{IP} برد تغییر کرده و در داشبورد \lr{Unavailable} شود. راه‌حل این بود که لاگ‌های زنده برد را باز کرده (\lr{\lstinline|esphome logs|})، آدرس جدید را خوانده و در تنظیمات \lr{Home Assistant} گزینه \textbf{\lr{Reconfigure}} را انتخاب کنیم تا بدون خرابی داشبورد، سنسورها متصل شوند.
+
+\section{جمع‌بندی و نتیجه‌گیری نهایی مسیر تکامل}
+با گذر از این سه فاز عملیاتی، ما از یک اسکریپت ساده پایتون برای خوانش \lr{RSSI} (با خطای بالا)، به یک شبکه مش توزیع‌شده قدرتمند با \lr{Rust} رسیدیم که امکانات نظارت حرفه‌ای در فضاهای وسیع را فراهم می‌کند. 
+در نهایت، با استقرار پلتفرم \lr{ESPectre}، فناوری پیچیده \lr{ISAC} را بومی‌سازی کرده و آن را در قالب یک گره کاملاً مستقل در لبه (\lr{Edge}) و با قابلیت اتصال سریع به پنل خانه‌های هوشمند خلاصه کردیم. 
+
+انتخاب بین \textbf{فاز دوم (RuView V2)} و \textbf{فاز سوم (ESPectre)} در پروژه‌های آتی، بستگی مستقیم به مقیاس دارد: برای محیط‌های تجاری وسیع با نیاز به پوشش \lr{Non-Line-of-Sight}، معماری فاز دوم (سرور مرکزی) ایده‌آل است؛ اما برای تجهیزات خانگی توکار و ارزان، معماری فاز سوم بلامنازع خواهد بود.
+
+\end{document}

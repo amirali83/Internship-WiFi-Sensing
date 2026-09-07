@@ -1,0 +1,368 @@
+\documentclass[12pt, a4paper]{article}
+
+% --- تنظیمات کلی و حاشیه‌ها ---
+\usepackage[top=2.5cm, bottom=2.5cm, left=2cm, right=2cm]{geometry}
+\usepackage{fontspec}
+
+% --- تنظیمات زبان و فونت با Babel ---
+\usepackage[persian, bidi=basic, provide=*]{babel}
+
+\babelprovide[import, onchar=ids fonts]{persian}
+\babelprovide[import, onchar=ids fonts]{english}
+
+% تنظیم فونت اصلی روی امیری و انگلیسی روی Noto Sans
+\babelfont{rm}{Amiri}
+\babelfont[persian]{rm}{Amiri}
+\babelfont[english]{rm}{Noto Sans}
+
+\usepackage{enumitem}
+\setlist[itemize]{label=\textbullet}
+
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, fit, backgrounds, calc}
+
+% تعریف یک دستور ساده برای نوشتن کلمات انگلیسی در متن فارسی
+\newcommand{\lr}[1]{\foreignlanguage{english}{#1}}
+
+% --- تنظیمات باکس‌های کد و خروجی (پس‌زمینه سفید، حاشیه آبی، متن مشکی) ---
+\usepackage{tcolorbox}
+\tcbuselibrary{listings}
+
+% محیط برای کدهای برنامه نویسی
+\newtcblisting{codebox}[1][]{
+  colback=white, colupper=black, colframe=blue!70!black,
+  listing only, boxrule=0.8pt, arc=4pt, left=2mm,
+  title=#1,
+  fonttitle=\bfseries\sffamily,
+  listing options={
+    basicstyle=\ttfamily\small\color{black}, 
+    columns=fullflexible, 
+    breaklines=true, 
+    breakatwhitespace=true,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}
+  }
+}
+
+% محیط برای خروجی‌های ترمینال
+\newtcblisting{terminalbox}[1][]{
+  colback=white, colupper=black, colframe=blue!70!black,
+  listing only, boxrule=0.8pt, arc=4pt, left=2mm,
+  title=#1,
+  fonttitle=\bfseries\sffamily,
+  listing options={
+    basicstyle=\ttfamily\footnotesize\color{black}, 
+    columns=fullflexible, 
+    breaklines=true,
+    breakatwhitespace=true,
+    postbreak=\mbox{\textcolor{blue}{$\hookrightarrow$}\space}
+  }
+}
+
+\begin{document}
+\thispagestyle{empty}
+
+% --- شناسنامه گزارش ---
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabularx}{\textwidth}{|c|c|c|X|c|c|}
+\hline
+\multicolumn{6}{|c|}{\textbf{شناسنامه‌ی گزارش}} \\
+\hline
+\multicolumn{2}{|c|}{\textbf{عنوان گزارش}} & \multicolumn{4}{l|}{بررسی معماری جامع \lr{RuView}: از ارزیابی \lr{RSSI} تا پردازش \lr{CSI} با \lr{Rust}} \\
+\hline
+\multicolumn{6}{|r|}{\textbf{چکیده}} \\
+\hline
+\multicolumn{6}{|p{\dimexpr\textwidth-2\tabcolsep-2\arrayrulewidth\relax}|}{
+در این گزارش، مراحل استقرار و معماری پروژه \lr{RuView} مستند شده است. پروژه از دو فاز تشکیل شده است: فاز اول (\lr{v1}) برای استخراج اولیه \lr{RSSI} و فاز دوم (\lr{v2}) که معماری پیشرفته‌تری مبتنی بر \lr{Rust} برای پردازش بلادرنگ \lr{CSI}، پایش علائم حیاتی و تشخیص فعالیت‌ها ارائه می‌دهد.
+} \\
+\hline
+\textbf{نسخه} & \textbf{تاریخ} & \textbf{نگارش کننده} & \multicolumn{1}{c|}{\textbf{تغییرات}} & \textbf{تایید} & \textbf{مدیر} \\
+\hline
+1 & 1405/05/06 & امیرعلی یزدیانی & $\bullet$ تدوین معماری سرور و مستندسازی فازهای پروژه & & \\
+\hline
+\end{tabularx}
+\end{center}
+
+\vspace{1cm}
+% --- فهرست مطالب ---
+\tableofcontents
+\newpage
+
+\section{چشم‌انداز و معرفی پروژه}
+پروژه \lr{RuView} یک پلتفرم جامع و در حال توسعه است که برای تبدیل سیگنال‌های عادی وای‌فای به یک سیستم سنجش فضایی طراحی شده است. سیستم از دو فاز اصلی \lr{v1} و \lr{v2} تشکیل شده است. فاز اول (\lr{v1}) به دلیل مشکلات کارایی و محدودیت‌ها آرشیو شده است، اما همچنان برای درک مفاهیم اولیه ارزش پیاده‌سازی دارد. هدف نهایی پروژه این است که حضور افراد، حرکت و علائم حیاتی، تنها از طریق تحلیل اختلالات امواج رادیویی تشخیص داده شود.
+
+\section{فاز اول (\lr{V1}): آماده‌سازی محیط و استخراج \lr{RSSI}}
+برای پیاده‌سازی بخش \lr{v1}، ابتدا مخزن پروژه را دریافت کرده و محیط مجازی پایتون را راه‌اندازی می‌کنیم:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}[Installing Requirments]
+git clone https://github.com/ruvnet/RuView.git
+cd RuView
+cd archive/v1
+python3 -m venv .venv
+source .venv/bin/activate
+.venv/bin/pip install -r requirements-lock.txt
+.venv/bin/pip install psutil fastapi uvicorn
+\end{terminalbox}
+\end{otherlanguage}
+
+از آنجا که کدهای اولیه برای \lr{Windows} بودند، ماژول را در کدهای پایتون به \lr{LinuxWifiCollector} تغییر داده و نام اینترفیس متصل به شبکه را که با دستور \lr{iwconfig} پیدا کرده‌ایم به آن می‌دهیم:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}[iwconfig Output]
+epo@hpds:~/Desktop/Amirali/WifiSensing/ruview/archive/v1$ iwconfig
+wlx002e2d2091fa  IEEE 802.11  ESSID:"Sharif-WiFi"  
+          Mode:Managed  Frequency:2.412 GHz  Access Point: 04:18:D6:E2:8D:35   
+          Bit Rate=6.5 Mb/s   Tx-Power=20 dBm   
+          Link Quality=54/70  Signal level=-56 dBm  
+\end{terminalbox}
+\end{otherlanguage}
+
+سپس با استفاده از اسکریپت تست پایتون (کد شماره ۱ در پیوست الف)، مقدار \lr{RSSI} را استخراج می‌کنیم. خروجی آن نشان می‌دهد که توانستیم با موفقیت اطلاعات سیگنال را بخوانیم:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}[Signal Output Test]
+epo@hpds:~/Desktop/Amirali/WifiSensing/ruview/archive/v1$ PYTHONPATH=.. .venv/bin/python test36.py
+RSSI: -52.0 dBm, Quality: 83%
+\end{terminalbox}
+\end{otherlanguage}
+
+\section{فاز اول (\lr{V1}): پردازش داده‌ها و پایش لحظه‌ای}
+با کمک \lr{RssiFeatureExtractor} و \lr{PresenceClassifier} داده‌های دریافت شده پردازش می‌شوند تا واریانس، انرژی حرکتی و حدس اولیه حضور استخراج شود. 
+
+با نوشتن اسکریپت پایش لحظه‌ای (کد شماره ۲ در پیوست الف)، وضعیت حضور و حرکت به صورت پیوسته در ترمینال نمایش داده می‌شود:
+
+\begin{otherlanguage}{english}
+\begin{terminalbox}[Live Monitoring]
+epo@hpds:~/Desktop/Amirali/WifiSensing/ruview/archive/v1$ PYTHONPATH=.. .venv/bin/python live_monitoring_for_linux.py 
+Starting Live Monitor on wlx002e2d2091fa... (Walk around to test!)
+Press Ctrl+C to stop.
+------------------------------------------------------------
+[14:51:27] RSSI= -52.0dBm  motion=0.0000 var=0.000 => MotionLevel.ABSENT
+[14:51:33] RSSI= -62.9dBm  motion=13.6989 var=2322.173 => MotionLevel.ACTIVE
+[14:51:48] RSSI= -43.8dBm  motion=18.0103 var=7.340 => MotionLevel.ACTIVE
+[14:51:51] RSSI= -43.4dBm  motion=7.0809 var=4.861 => MotionLevel.PRESENT_STILL
+\end{terminalbox}
+\end{otherlanguage}
+
+اگرچه این فاز پیاده‌سازی موفقی برای اثبات مفهوم است، اما با تکیه بر یک آستانه (\lr{Threshold}) ساده کار می‌کند. برای دستیابی به دقت بالا و استخراج علائم حیاتی به صورت بلادرنگ، نیازمند معماری \lr{v2} هستیم.
+
+\newpage
+\section{بخش دوم: توسعه پیشرفته با معماری \lr{Rust} (\lr{V2})}
+معماری \lr{v2} برای پردازش بلادرنگ حجم عظیمی از داده‌های شبکه با سرعت بالا توسعه یافته است. در این نسخه، سیستم \textbf{تشخیص هوشمند منبع داده} دارد. بعد از اینکه پروژه با استفاده از ابزار \lr{Cargo} بیلد (\lr{Build}) می‌شود، سرور هنگام اجرا به صورت خودکار بررسی می‌کند که آیا داده‌ای از \lr{ESP32} دریافت می‌شود؟ در غیر این صورت آیا منبع \lr{WiFi} در دسترس است؟ و اگر هیچ‌کدام نبود، مستقیماً وارد حالت شبیه‌سازی (\lr{Simulation}) می‌شود. 
+
+خروجی تمام این حالت‌ها در یک رابط کاربری گرافیکی بسیار زیبا (مبتنی بر فریم‌ورک \lr{Tauri}) با داشبوردهای جذاب به کاربر نمایش داده می‌شود.
+
+\subsection{پیاده‌سازی در حالت شبیه‌سازی (\lr{Simulate})}
+در صورتی که سخت‌افزاری متصل نباشد، سرور به صورت شبیه‌ساز بالا می‌آید. سیستم دیتاهای \lr{CSI} را به صورت مجازی تولید کرده و \lr{API} را در دسترس قرار می‌دهد. منطق شبکه‌ای در این حالت کاملاً مشابه دریافت داده واقعی است.
+
+% --- بخش تصاویر ---
+
+\begin{figure}[H]
+    \centering
+    \lr{\includegraphics[width=0.9\textwidth]{Desktop}}
+    \caption{\foreignlanguage{persian}{نمای کلی دسکتاپ و صفحه اصلی رابط کاربری}}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \lr{\includegraphics[width=0.9\textwidth]{Desktop_ShowHardware}}
+    \caption{\foreignlanguage{persian}{نمای تنظیمات و مدیریت سخت‌افزارهای متصل}}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \lr{\includegraphics[width=0.9\textwidth]{Wifi-Sensing}}
+    \caption{\foreignlanguage{persian}{داشبورد پایش وضعیت با استفاده از داده‌های \lr{RSSI}}}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \lr{\includegraphics[width=0.9\textwidth]{Observation-ESP32}}
+    \caption{\foreignlanguage{persian}{تشخیص فعالیت (دراز کشیدن) در صورت اتصال \lr{ESP32}}}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \lr{\includegraphics[width=0.9\textwidth]{Liva_Statics}}
+    \caption{\foreignlanguage{persian}{پایش و نمایش آمار و نتایج پردازش در لحظه}}
+\end{figure}
+
+\subsection{پیاده‌سازی از طریق \lr{WiFi}}
+پردازش اطلاعات از طریق \lr{WiFi} دقیقاً در \textbf{همان محیط گرافیکی حالت شبیه‌سازی} اجرا می‌شود، با این تفاوت که سیستم هوشمندانه منبع را روی کارت شبکه وای‌فای تنظیم می‌کند. \textbf{این حالت در محیط آزمایشگاه مورد تست قرار گرفت} و نتایج نشان داد که استخراج اطلاعات با این روش عملکرد بسیار خوبی داشته و با درصد خطای قابل قبولی کار می‌کند.
+
+\begin{table}[h]
+    \centering
+    % نام فایل اسکرین‌شاتی که گرفتی را اینجا وارد کن (بدون نیاز به پسوند)
+    \lr{\includegraphics[width=0.8\textwidth]{Diff.png}}
+    \vspace{0.3cm}
+    \caption{\foreignlanguage{persian}{مقایسه قابلیت‌های \lr{RSSI} و \lr{CSI} در پلتفرم \lr{RuView}}}
+    \label{tab:wifi-sensing-comparison}
+\end{table}
+
+\subsection{کالبدشکافی معماری \lr{V2} و پیاده‌سازی با \lr{ESP32}}
+بخش اصلی و قدرت واقعی پروژه در استفاده از سخت‌افزار \lr{ESP32} نهفته است. در این بخش، معماری سیستم را که از دو قسمت دسکتاپ و سرور تشکیل شده، باز می‌کنیم.
+
+\subsubsection{ساختار کلاینت دسکتاپ (\lr{wifi-densepose-desktop})}
+این برنامه مبتنی بر فریم‌ورک \textbf{\lr{Tauri}} است که فرانت‌اند آن با \lr{HTML/JS/CSS} و بک‌اند آن با زبان \lr{Rust} توسعه یافته است. فایل \lr{main.rs} در مسیر دسکتاپ، نقطه شروع برنامه است که وظیفه مدیریت پلاگین‌ها و افزودن دستورات (\lr{Commands}) را بر عهده دارد. دستورات اصلی شامل موارد زیر است:
+
+\begin{itemize}
+    \item \textbf{\lr{Discovery}:} اضافه کردن و کشف سنسورهای جدید.
+    \item \textbf{\lr{Flash}:} نصب فریم‌ور جدید بر روی سنسور از طریق کابل.
+    \item \textbf{\lr{OTA}:} بروزرسانی فریم‌ور از راه دور (بدون نیاز به اتصال \lr{USB}).
+    \item \textbf{\lr{WASM}:} نصب ماژول‌های پردازشی جدید روی خود سنسور تا بخشی از بار محاسباتی قبل از ارسال، روی لبه (\lr{Edge}) انجام شود.
+    \item \textbf{\lr{Provision \& Settings}:} راه‌اندازی یک نود جدید و ذخیره تنظیمات کاربر.
+    \item \textbf{\lr{Server}:} کنترل کل سیستم سنجش؛ شامل یافتن باینری سرور، استارت، استاپ، ریستارت و لاگ‌گیری. این بخش، قلب تپنده مدیریت برنامه است.
+\end{itemize}
+
+\subsubsection{ساختار سرور پردازشی (\lr{wifi-densepose-sensing-server})}
+هسته اصلی پردازش در مسیر \lr{v2/crates/wifi-densepose-sensing-server/} قرار دارد. زمانی که کاربر از طریق دسکتاپ سرور را استارت می‌زند، فایل اجرایی نهایی (\lr{sensing-server.exe} یا باینری لینوکسی آن) فراخوانی می‌شود.
+
+\paragraph{الف) حالت‌های اجرایی خط فرمان (CLI)}
+سرور دارای حالت‌های اجرای مختلفی است. جذاب‌ترین بخش آن معماری یادگیری خودنظارتی (\lr{Self-Supervised Learning}) است:
+
+\begin{itemize}
+    \item \textbf{\lr{--PreTrain}:} مدلی برای خوشه‌بندی داده‌های بدون برچسب. داده‌های خام \lr{CSI} (مثلاً ماتریس $4 \times 56 = 224$) ابتدا وارد شبکه‌های ترانسفورمر (\lr{Transformer}) شده و به بردار ۶۴ بعدی تبدیل می‌شوند. سپس از شبکه‌های عصبی گراف (\lr{GNN}) عبور کرده و در نهایت توسط یک لایه \lr{Projection} به یک بردار نهایی ۱۲۸ بعدی تبدیل می‌شوند. مدل در این حالت یاد می‌گیرد که داده‌های مشابه را در فضای برداری به هم نزدیک و سایر داده‌ها را دور کند.
+    \item \textbf{\lr{--Embed}:} با استفاده از مدل آموزش‌دیده، داده \lr{CSI} خام را گرفته و فقط بردار ۱۲۸ بعدی را تحویل می‌دهد.
+    \item \textbf{\lr{--build-index}:} بردارهای تولید شده را با یک لیست از پیش لیبل‌گذاری‌شده مقایسه کرده و با یافتن نزدیک‌ترین همسایه‌ها، لیبلِ رفتار را پیش‌بینی می‌کند.
+    \item \textbf{\lr{--Train}:} برخلاف \lr{PreTrain}، این مرحله دارای لیبل است (\lr{Supervised}) و شبکه‌های دکودر اختصاصی (برای تخمین ژست، علائم حیاتی و ...) را بر روی ویژگی‌های استخراج‌شده آموزش می‌دهد.
+\end{itemize}
+
+\paragraph{ب) پردازش داده‌ها در حالت عادی (سرور اصلی)}
+پس از راه‌اندازی سرور، مدل‌ها به صورت لایه‌لایه (\lr{Progressive Loading}) بارگذاری می‌شوند تا از پر شدن حافظه موقت جلوگیری شود. سپس سرور منتظر بسته‌های \lr{UDP} می‌ماند. این بسته‌ها می‌توانند بسته‌های ساختگی، دیتای چیپ‌های \lr{Qualcomm} یا \lr{Mediatek}، خروجی‌های \lr{WASM} یا داده همگام‌سازی باشند.
+
+مهمترین بسته، \textbf{داده خام \lr{ESP32 CSI} (با شناسه \lr{0xC511\_0001})} است که وارد خط لوله پردازشی زیر می‌شود:
+
+\begin{enumerate}
+    \item \textbf{طبقه‌بند تطبیقی (\lr{Adaptive Classifier}):} \\
+    دریافت ۸ ورودی مهم شامل واریانس، توان باند حرکتی، توان باند تنفسی، توان طیفی، فرکانس غالب، نقاط تغییر، میانگین \lr{RSSI} و ۸ ویژگی آماری دامنه. در نهایت لیبل حضور (\lr{Absent, Present\_Still, Active}) و میزان اطمینان استخراج می‌شود.
+    
+    \item \textbf{تشخیص علائم حیاتی (\lr{Vital Signs}):} \\
+    با پردازش سیگنال، میانگین دامنه و واریانس فاز محاسبه می‌شود. پس از فیلتر کردن بازه‌های مربوطه و تحلیل \lr{FFT}، نرخ تنفس (\lr{Breathing Rate}) و ضربان قلب (\lr{Heart Rate}) به دست می‌آید.
+    
+    \item \textbf{تخمین تعداد افراد (\lr{People Counting}):} \\
+    با انتخاب ساب‌کریرهای فعال و محاسبه همبستگی آن‌ها، سیستم به کمک مدل‌سازی گراف تلاش می‌کند گروه‌های مستقل را پیدا کند. خروجی نهایی پس از اعمال فیلتر برای جلوگیری از تغییرات ناگهانی، تعداد افراد حاضر را نشان می‌دهد.
+    
+    \item \textbf{ترکیب و پل چندایستگاهی (\lr{Multistatic Bridge}):} \\
+    سیستم داده‌های گره‌های مختلف را بر اساس قدرت \lr{RSSI} آن‌ها وزن‌دهی کرده و ترکیب می‌کند. مدل‌های پیشرفته‌تر تلاش می‌کنند از این ترکیب، یک تصویر سه‌بعدی یا نقشه جامع از محیط بسازند.
+\end{enumerate}
+
+با استفاده از این ساختار دقیق، سرور \lr{Rust} توانسته است گلوگاه‌های عملکردی پایتون را رفع کرده و داده‌های خام را با سرعتی بی‌نظیر به اطلاعاتی ساختاریافته تبدیل کند.
+
+
+\begin{figure}[H]
+\centering
+\begin{otherlanguage}{english}
+\begin{tikzpicture}[
+    % تعریف استایل باکس‌ها
+    >=Stealth,
+    node distance=1.5cm and 2.5cm,
+    sourceBox/.style={rectangle, draw=cyan!70!black, fill=cyan!5, thick, rounded corners, minimum width=3cm, minimum height=1.5cm, align=center, font=\sffamily\small},
+    serverBox/.style={rectangle, draw=orange!80!black, fill=orange!5, thick, rounded corners, minimum width=4cm, minimum height=4.5cm, align=center, font=\sffamily},
+    desktopBox/.style={rectangle, draw=green!70!black, fill=green!5, thick, rounded corners, minimum width=3.5cm, minimum height=2.5cm, align=center, font=\sffamily},
+    arrow/.style={->, thick, draw=gray!80!black},
+    bidirectional/.style={<->, thick, draw=blue!70!black}
+]
+
+% --- گره‌ها (Nodes) ---
+
+% سمت چپ: منابع داده
+\node[sourceBox] (esp) {\textbf{ESP32 Sensor}\\ \footnotesize (CSI Data)};
+\node[sourceBox, below=1cm of esp] (wifi) {\textbf{WiFi / Simulate}\\ \footnotesize (RSSI / Mock Data)};
+
+% وسط: سرور Rust
+\node[serverBox, right=3cm of esp, yshift=-0.75cm] (server) {
+    \textbf{Rust Sensing Server}\\
+    \vspace{0.3cm}\\
+    \footnotesize $\bullet$ UDP Receiver\\
+    \footnotesize $\bullet$ Adaptive Classifier\\
+    \footnotesize $\bullet$ Vital Signs Extractor\\
+    \footnotesize $\bullet$ Multistatic Bridge
+};
+
+% سمت راست: دسکتاپ Tauri
+\node[desktopBox, right=3cm of server, yshift=0.75cm] (desktop) {
+    \textbf{Tauri Desktop Client}\\
+    \vspace{0.3cm}\\
+    \footnotesize $\bullet$ UI Dashboards\\
+    \footnotesize $\bullet$ Command Manager
+};
+
+% --- اتصالات و فلش‌ها ---
+
+% از منابع به سرور (جریان داده)
+\draw[arrow] (esp.east) -- node[above, font=\footnotesize, color=black!70] {UDP (0xC511\_0001)} (esp.east -| server.west);
+\draw[arrow] (wifi.east) -- node[below, font=\footnotesize, color=black!70] {Local Data Stream} (wifi.east -| server.west);
+
+% بین سرور و دسکتاپ (داده‌ها و وب‌سوکت)
+\draw[bidirectional] (server.east |- desktop.west) -- node[above, font=\footnotesize, color=black!70] {WebSocket / HTTP} (desktop.west);
+
+% فلش کنترلی از دسکتاپ به سرور (خط چین)
+\draw[arrow, dashed, draw=red!70!black] (desktop.south) |- ++(0,-1.5) -| node[near start, below, font=\footnotesize, color=red!70!black] {Server Control (Start/Stop, Config)} (server.south);
+
+\end{tikzpicture}
+\end{otherlanguage}
+\vspace{0.5cm}
+\caption{\foreignlanguage{persian}{معماری گرافیکی جریان داده‌ها و ارتباطات کنترلی در نسخه \lr{v2}}}
+\end{figure}
+
+\newpage
+\appendix
+\section{پیوست الف: کدهای پایتون فاز اول}
+
+\begin{otherlanguage}{english}
+\begin{codebox}[RSSI (test36.py)]
+import sys; sys.path.insert(0, 'archive/v1')
+from src.sensing.rssi_collector import LinuxWifiCollector
+
+c = LinuxWifiCollector(interface='wlx002e2d2091fa')
+s = c.collect_once()
+print(f'RSSI: {s.rssi_dbm} dBm, Quality: {s.link_quality:.0%}')
+\end{codebox}
+\end{otherlanguage}
+
+\begin{otherlanguage}{english}
+\begin{codebox}[live\_monitoring\_for\_linux.py]
+import time
+from src.sensing.rssi_collector import LinuxWifiCollector
+from src.sensing.feature_extractor import RssiFeatureExtractor
+from src.sensing.classifier import PresenceClassifier
+
+collector = LinuxWifiCollector(interface='wlx002e2d2091fa', sample_rate_hz=2.0)
+extractor = RssiFeatureExtractor(window_seconds=15.0)
+classifier = PresenceClassifier(presence_variance_threshold=0.3)
+
+collector.start()
+print("Starting Live Monitor on wlx002e2d2091fa... (Walk around to test!)")
+print("Press Ctrl+C to stop.")
+print("-" * 60)
+
+try:
+    while True:
+        time.sleep(3)
+        samples = collector.get_samples()
+        
+        if len(samples) > 5:
+            features = extractor.extract(samples)
+            result = classifier.classify(features)
+            
+            current_time = time.strftime("%H:%M:%S")
+            verdict = getattr(result, "motion_level", result)
+            
+            print(f"[{current_time}] RSSI= {features.mean:.1f}dBm  motion={features.motion_band_power:.4f} var={features.variance:.3f} => {verdict}")
+        else:
+            print("Waiting for enough samples...")
+            
+except KeyboardInterrupt:
+    print("\nStopping Live Monitor...")
+finally:
+    collector.stop()
+\end{codebox}
+\end{otherlanguage}
+
+\end{document}
