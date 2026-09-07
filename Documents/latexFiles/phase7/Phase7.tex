@@ -1,0 +1,660 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{amsmath,amssymb,graphicx}
+\usepackage[table]{xcolor}
+\usepackage{geometry,booktabs,tabularx,longtable,array,enumitem,listings,caption,xurl,fancyhdr,fontspec,hyperref}
+\geometry{top=2.4cm,bottom=2.4cm,left=2.2cm,right=2.2cm}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlength{\headheight}{17pt}
+\renewcommand{\arraystretch}{1.35}
+\setcounter{tocdepth}{2}
+\setlist[itemize]{itemsep=0.25em,topsep=0.35em}
+\setlist[enumerate]{itemsep=0.35em,topsep=0.35em}
+
+% انتخاب خودکار فونت فارسی موجود در سیستم
+\newcommand{\PersianFontName}{DejaVu Sans}
+\IfFontExistsTF{Vazirmatn}{\renewcommand{\PersianFontName}{Vazirmatn}}{\IfFontExistsTF{Amiri}{\renewcommand{\PersianFontName}{Amiri}}{}}
+
+% زی‌پرشین مسیر اصلی است؛ Babel برای سیستم فاقد زی‌پرشین در نظر گرفته شده است.
+\newif\ifxepersianavailable
+\IfFileExists{xepersian.sty}{\xepersianavailabletrue}{\xepersianavailablefalse}
+\ifxepersianavailable
+  \usepackage{xepersian}
+  \settextfont[Scale=1.02]{\PersianFontName}
+  \IfFontExistsTF{Noto Sans}{\setlatintextfont{Noto Sans}}{\setlatintextfont{DejaVu Sans}}
+\else
+  \usepackage[layout=sectioning.tabular]{babel}
+  \babelprovide[main,import]{persian}
+  \babelprovide[import]{english}
+  \babelfont[persian]{rm}[Scale=1.02]{\PersianFontName}
+  \IfFontExistsTF{Noto Sans}{\babelfont[english]{rm}{Noto Sans}}{\babelfont[english]{rm}{DejaVu Sans}}
+  \babelfont{tt}{DejaVu Sans Mono}
+  \TeXXeTstate=1
+  \newcommand{\lr}[1]{\foreignlanguage{english}{#1}}
+  \newenvironment{latin}{\par\beginL\selectlanguage{english}}{\endL\par}
+\fi
+\newcommand{\eng}[1]{\lr{#1}}
+\newcommand{\code}[1]{\lr{\nolinkurl{#1}}}
+
+\definecolor{codebg}{RGB}{247,247,247}
+\definecolor{codegreen}{RGB}{0,105,65}
+\definecolor{codepurple}{RGB}{118,43,131}
+\lstdefinelanguage{bash}{morekeywords={cd,chmod,chown,cp,echo,find,git,grep,ls,mv,rm,sed,sudo,usermod},sensitive=true,morecomment=[l]{\#},morestring=[b]"}
+\lstdefinelanguage{text}{}
+\lstset{basicstyle=\small\ttfamily,backgroundcolor=\color{codebg},frame=single,rulecolor=\color{gray!35},breaklines=true,postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},keywordstyle=\color{blue!70!black}\bfseries,commentstyle=\color{codegreen},stringstyle=\color{codepurple},showstringspaces=false,columns=fullflexible,keepspaces=true,numbers=left,numberstyle=\scriptsize\color{gray},numbersep=7pt,xleftmargin=1.5em}
+
+\hypersetup{colorlinks=true,linkcolor=blue!55!black,urlcolor=cyan!45!black,citecolor=blue!55!black,pdftitle={راهنمای بازتولیدپذیر نصب و راه‌اندازی ESP32 Marauder روی ESP32-S3}}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small راهنمای نصب و اعتبارسنجی \eng{ESP32 Marauder}}
+\lhead{\small آزمایشگاه سیستم‌های بی‌سیم}
+\cfoot{\thepage}
+
+\begin{document}
+\pagestyle{empty}
+\begin{titlepage}
+  \ifxepersianavailable\else\beginR\fi
+  \thispagestyle{empty}
+  \centering
+  \vspace*{1.8cm}
+  {\LARGE\textbf{گزارش آزمایشگاهی و راهنمای بازتولیدپذیر}}\\[0.7cm]
+  {\Large\textbf{نصب، کامپایل، بارگذاری و اعتبارسنجی فریم‌ور \eng{ESP32 Marauder} روی \eng{ESP32-S3}}}\\[1.6cm]
+  {\large از آماده‌سازی \eng{Arduino IDE} در لینوکس تا اجرای رابط خط فرمان و تحلیل اسکن شبکه}\\[2cm]
+  \begin{tabular}{>{\bfseries}r l}
+  سیستم‌عامل & \eng{GNU/Linux} مبتنی بر \eng{Debian/Ubuntu} \\
+  محیط توسعه & \eng{Arduino IDE 2.x} \\
+  هسته برد & \eng{esp32 by Espressif Systems 2.0.10} \\
+  برد هدف & \eng{ESP32-S3 Dev Module} \\
+  نرخ ارتباط سریال & \eng{115200 Baud}
+  \end{tabular}
+  \vfill
+  \today
+  \ifxepersianavailable\else\endR\fi
+\end{titlepage}
+
+\pagenumbering{roman}
+\pagestyle{plain}
+\ifxepersianavailable\else\beginR\fi
+\tableofcontents
+\newpage
+\pagenumbering{arabic}
+\pagestyle{fancy}
+
+\section{هدف، دامنه و نتیجه نهایی}
+این گزارش تمام مراحلی را که برای راه‌اندازی فریم‌ور \eng{ESP32 Marauder} روی برد \eng{ESP32-S3} طی شده است، به ترتیب زمانی و به‌صورت قابل تکرار مستند می‌کند. مسیر کار از دریافت \eng{Arduino IDE} در لینوکس آغاز می‌شود و نصب هسته برد، رفع خطاهای دسترسی، نصب وابستگی‌ها، اصلاح پیکربندی پیونددهنده، کامپایل، بارگذاری و آزمون رابط خط فرمان را پوشش می‌دهد.
+
+در پایان این فرآیند، فریم‌ور با موفقیت روی برد بارگذاری شد، رابط خط فرمان روی درگاه \eng{USB} با نرخ \eng{115200 Baud} در دسترس قرار گرفت و فرمان‌های \code{help}، \code{channel}، \code{scanall}، \code{stopscan}، \code{list -a} و \code{info -a 9} برای اعتبارسنجی عملیاتی اجرا شدند.
+
+\subsection{ملاحظه استفاده آزمایشگاهی}
+قابلیت‌های پایش و تزریق فریم باید فقط روی تجهیزات متعلق به کاربر یا شبکه‌ای که مجوز صریح آزمون آن وجود دارد اجرا شوند. در این گزارش، فرمان‌های تهاجمی صرفاً برای کامل‌بودن مرجع رابط خط فرمان معرفی می‌شوند و هیچ گردش‌کار عملیاتی برای استفاده علیه شبکه‌های ثالث ارائه نمی‌شود.
+
+\section{پیش‌نیازها و اطلاعات لازم}
+پیش از شروع، موارد زیر آماده و ثبت می‌شوند:
+\begin{itemize}
+  \item یک برد \eng{ESP32-S3} و کابل \eng{USB} دارای خطوط داده؛ برخی کابل‌ها فقط برای شارژ مناسب‌اند.
+  \item یک سیستم لینوکسی مبتنی بر \eng{Debian/Ubuntu} و حساب کاربری دارای دسترسی \code{sudo}.
+  \item اتصال اینترنت پایدار؛ در محیطی که دسترسی به مخازن محدود است، اتصال \eng{VPN/Proxy} باید پیش از نخستین اجرای \eng{Boards Manager} و \eng{Library Manager} برقرار شود.
+  \item فضای کافی برای \eng{Arduino IDE}، بسته هسته \eng{ESP32} و کتابخانه‌های پروژه.
+  \item نام کاربری لینوکس و مسیر \code{~/.arduino15}؛ در اجرای انجام‌شده، نام کاربری \code{epo} بوده است.
+\end{itemize}
+
+برای بازتولید دقیق، بهتر است مدل کامل برد، ظرفیت فلش و \eng{PSRAM}، شناسه نسخه یا \eng{commit} فریم‌ور و خروجی نهایی کامپایل در برگه آزمایش ثبت شوند.
+
+\section{مرحله اول: دریافت و اجرای محیط توسعه}
+\subsection{دریافت و استخراج آرشیو}
+آرشیو لینوکس \eng{Arduino IDE 2.x} از صفحه رسمی زیر دریافت شد:
+\begin{center}\url{https://www.arduino.cc/en/software/}\end{center}
+
+پس از دریافت، آرشیو در یک پوشه کاری استخراج شد. تمام فرمان‌های این بخش باید از داخل همان پوشه‌ای اجرا شوند که فایل \code{arduino-ide} و فایل \code{chrome-sandbox} در آن قرار دارند. برای اطمینان می‌توان ابتدا محتویات پوشه را بررسی کرد:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+ls -l arduino-ide chrome-sandbox
+\end{lstlisting}
+\end{latin}
+
+سپس مجوز اجرای فایل اصلی فعال و برنامه اجرا شد:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+chmod +x arduino-ide
+./arduino-ide
+\end{lstlisting}
+\end{latin}
+
+\subsection{رفع خطای Chrome Sandbox}
+در اجرای اولیه، برنامه به دلیل مالکیت یا مجوز نامناسب فایل \code{chrome-sandbox} متوقف شد. مالکیت فایل به کاربر ریشه منتقل و بیت \eng{SUID} مطابق نیاز \eng{Electron} تنظیم شد:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+sudo chown root:root chrome-sandbox
+sudo chmod 4755 chrome-sandbox
+ls -l chrome-sandbox
+\end{lstlisting}
+\end{latin}
+
+در خروجی \code{ls -l} باید مالک و گروه \code{root} باشند و بخش مجوز کاربر به شکل \code{rws} دیده شود. پس از آن اجرای عادی دوباره امتحان می‌شود:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+./arduino-ide
+\end{lstlisting}
+\end{latin}
+
+در فرآیند انجام‌شده، برای عبور موقت از خطای باقی‌مانده، برنامه یک بار با گزینه زیر نیز اجرا شد:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+./arduino-ide --no-sandbox
+\end{lstlisting}
+\end{latin}
+
+این گزینه سازوکار \eng{Sandbox} را غیرفعال می‌کند و از نظر امنیتی انتخاب دائمی نیست. روش ترجیحی همان اصلاح صحیح مالکیت و مجوز \code{chrome-sandbox} و سپس اجرای بدون این گزینه است.
+
+\subsection{رفع مجوز ابزارهای Backend}
+برای جلوگیری از خطای اجراشدن ابزارهای داخلی، مجوز اجرایی منابع \eng{Backend} فعال شد:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+chmod -R +x resources/app/lib/backend/resources/
+\end{lstlisting}
+\end{latin}
+
+این فرمان نیز باید در ریشه پوشه استخراج‌شده \eng{Arduino IDE} اجرا شود. اگر مسیر وجود نداشت، ابتدا باید با \code{pwd} و \code{ls} بررسی شود که ترمینال در پوشه درست قرار دارد و ساختار نسخه دریافت‌شده با این مسیر سازگار است.
+
+\subsection{اتصال VPN و دریافت وابستگی‌های محیط توسعه}
+در اجرای حاضر، بخشی از فایل‌های موردنیاز به علت محدودیت شبکه به‌صورت خودکار دریافت نشد و دو فایل وابستگی به‌صورت دستی دریافت، استخراج و در محل موردنیاز قرار داده شدند. اگر \eng{VPN} از ابتدا فعال باشد، \eng{Arduino IDE} معمولاً این اجزا را از طریق مدیر بسته دریافت می‌کند و نصب دستی لازم نیست.
+
+روند پیشنهادی و قابل تکرار چنین است:
+\begin{enumerate}
+  \item برنامه بسته شود و اتصال \eng{VPN/Proxy} برقرار گردد.
+  \item برنامه دوباره اجرا شود و در \eng{Boards Manager} یا \eng{Library Manager} عملیات نصب تکرار گردد.
+  \item اگر دریافت خودکار همچنان ناموفق بود، نام دقیق فایل و نشانی نمایش‌داده‌شده در لاگ خروجی ثبت شود.
+  \item همان فایل از منبع رسمی دریافت و صحت دانلود آن کنترل شود.
+  \item آرشیو بدون تغییر نام داخلی استخراج و در مسیر اعلام‌شده در لاگ یا پوشه بسته مربوط قرار داده شود.
+  \item برنامه بسته و دوباره باز شود و نصب مجدداً اجرا گردد.
+\end{enumerate}
+
+نام دو فایل دستی در یادداشت‌های آزمایش ثبت نشده است؛ بنابراین برای جلوگیری از درج نام حدسی و غیرقابل اتکا، در این گزارش نامی برای آن‌ها ساخته نشده است. در اجرای بعدی باید نام، نسخه، نشانی دریافت و مسیر مقصد هر دو فایل ثبت شود. در برخی بردها ممکن است نصب راه‌اندازهای \eng{CP210x} یا \eng{CH340x} نیز لازم باشد، ولی در بسیاری از کرنل‌های جدید لینوکس این راه‌اندازها از قبل وجود دارند.
+
+\section{مرحله دوم: نصب هسته ESP32 و آماده‌سازی پورت سریال}
+\subsection{افزودن نشانی Boards Manager}
+در \eng{Arduino IDE} مسیر \eng{File > Preferences} باز و نشانی زیر در بخش \eng{Additional Boards Manager URLs} وارد شد:
+\begin{latin}
+\begin{lstlisting}[language=text]
+https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+\end{lstlisting}
+\end{latin}
+
+سپس از مسیر \eng{Tools > Board > Boards Manager} عبارت \code{esp32} جست‌وجو و بسته \eng{esp32 by Espressif Systems} نصب شد. نسخه موردنیاز این فرآیند دقیقاً \textbf{2.0.10} است. عبارت \eng{2.10} یک نگارش متفاوت از شماره نسخه و در این گزارش منظور نیست. الزام نسخه \eng{2.0.10} با راهنمای رسمی ساخت Marauder در Arduino IDE نیز سازگار است.
+
+پس از نصب می‌توان وجود مسیر را در ترمینال کنترل کرد:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+ls ~/.arduino15/packages/esp32/hardware/esp32/2.0.10/
+\end{lstlisting}
+\end{latin}
+
+\subsection{اعطای دسترسی به پورت سریال}
+کاربر به گروه \code{dialout} افزوده شد تا بتواند بدون اجرای Arduino IDE با دسترسی ریشه، پورت‌های \code{/dev/ttyACM*} و \code{/dev/ttyUSB*} را باز کند:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+sudo usermod -a -G dialout $USER
+\end{lstlisting}
+\end{latin}
+
+پس از اجرای فرمان، باید یک بار از حساب کاربری خارج و دوباره وارد شد یا سیستم را راه‌اندازی مجدد کرد. سپس عضویت گروه و ظاهرشدن پورت بررسی می‌شود:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+groups
+ls -l /dev/ttyACM* /dev/ttyUSB* 2>/dev/null
+\end{lstlisting}
+\end{latin}
+
+\section{مرحله سوم: بازکردن پروژه و تنظیم برد}
+\subsection{بازکردن فایل اصلی پروژه}
+فایل \code{esp32_marauder.ino} از پوشه سورس Marauder باز شد. بهتر است فایل اصلی و تمام فایل‌های وابسته پروژه در پوشه‌ای هم‌نام قرار داشته باشند و Arduino IDE پروژه را به‌صورت یک Sketch کامل باز کند.
+
+\subsection{چهار تنظیم اصلی منوی Tools}
+چهار پارامتر زیر از منوی \eng{Tools} تنظیم شدند:
+\begin{table}[htbp]
+\centering
+\caption{تنظیمات اصلی برد برای فرآیند انجام‌شده}
+\label{tab:board-settings}
+\begin{tabularx}{\textwidth}{>{\raggedleft\arraybackslash}p{3.4cm} >{\raggedright\arraybackslash}p{4.2cm} X}
+\toprule
+\textbf{گزینه} & \textbf{مقدار} & \textbf{هدف} \\
+\midrule
+\eng{Board} & \eng{ESP32S3 Dev Module} & انتخاب خانواده صحیح پردازنده \eng{ESP32-S3} \\
+\eng{USB CDC On Boot} & \eng{Enabled} & فعال‌کردن کنسول سریال از طریق رابط \eng{USB CDC} \\
+\eng{Partition Scheme} & \eng{Huge APP (3MB No OTA)} & فراهم‌کردن فضای کافی برای باینری بزرگ Marauder و حذف فضای رزروشده برای \eng{OTA} \\
+\eng{Upload Speed} & \eng{921600} & افزایش سرعت انتقال؛ در صورت ناپایداری می‌توان مقدار پایین‌تری مانند \eng{460800} یا \eng{115200} را آزمایش کرد \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+پس از انتخاب برد، پورت متناظر نیز از \eng{Tools > Port} انتخاب شد. اگر هیچ پورتی نمایش داده نمی‌شود، کابل، عضویت در \code{dialout}، حالت بوت برد و خروجی \code{dmesg} باید بررسی شوند.
+
+\section{مرحله چهارم: نصب وابستگی‌های نرم‌افزاری}
+\subsection{کتابخانه‌های نصب‌شده از Library Manager}
+با اتصال فعال \eng{VPN}، در \eng{Tools > Manage Libraries} یا پنل \eng{Library Manager} نام کتابخانه‌ها جست‌وجو و نسخه سازگار نصب شد:
+\begin{itemize}
+  \item \eng{LinkedList by Ivan Seidel}: ساختار فهرست پیوندی برای نگهداری داده‌ها و اشیای پویا.
+  \item \eng{NimBLE-Arduino by h2zero}: پشته کم‌حجم \eng{Bluetooth Low Energy}.
+  \item \eng{ArduinoJson by Benoit Blanchon}: ساخت، خواندن و پردازش داده‌های \eng{JSON}.
+  \item \eng{ESP32Time by fbiego}: مدیریت زمان و ساعت نرم‌افزاری روی \eng{ESP32}.
+  \item \eng{EspSoftwareSerial}: کتابخانه رابط سریال نرم‌افزاری. توسعه‌دهندگان آن \eng{Dirk Kaar} و \eng{Peter Lerup} هستند.
+\end{itemize}
+
+پس از نصب هر کتابخانه، باید نام پوشه آن در \code{~/Arduino/libraries} قابل مشاهده باشد. اگر چند نسخه از یک کتابخانه وجود دارد، Arduino IDE ممکن است نسخه اشتباه را انتخاب کند؛ خروجی \eng{Verify} مسیر کتابخانه انتخاب‌شده را نشان می‌دهد.
+
+\subsection{نصب دستی ESP32Ping}
+کتابخانه \eng{ESP32Ping} به‌صورت مستقیم از مخزن آن در پوشه کتابخانه‌های کاربر نصب شد:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+cd ~/Arduino/libraries
+git clone https://github.com/marian-craciunescu/ESP32Ping.git
+\end{lstlisting}
+\end{latin}
+
+\subsection{جایگزینی ESPAsyncWebServer}
+نسخه موجود حذف و نسخه مورد استفاده در فرآیند از مخزن \eng{me-no-dev} دریافت شد:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+cd ~/Arduino/libraries
+rm -rf ESPAsyncWebServer
+git clone https://github.com/me-no-dev/ESPAsyncWebServer.git
+\end{lstlisting}
+\end{latin}
+
+فرمان \code{rm -rf} پوشه موجود را به‌طور غیرقابل بازگشت حذف می‌کند؛ بنابراین باید پیش از اجرا از درست‌بودن مسیر \code{~/Arduino/libraries/ESPAsyncWebServer} اطمینان حاصل شود. اگر نسخه قبلی دارای تغییرات محلی است، ابتدا باید از آن نسخه پشتیبان تهیه شود.
+
+پس از نصب یا جایگزینی کتابخانه‌ها، Arduino IDE بسته و دوباره باز شد تا فهرست کتابخانه‌ها بازخوانی شود. سپس فرمان \eng{Sketch > Verify/Compile} اجرا گردید.
+
+\section{مرحله پنجم: رفع خطای پیونددهنده}
+\subsection{ماهیت خطا}
+پس از رفع وابستگی‌ها، مرحله کامپایل به خطای چندتعریفی پیونددهنده رسید. این خطا زمانی رخ می‌دهد که یک نماد با نام یکسان در بیش از یک فایل شیء یا کتابخانه تعریف شده باشد. در Marauder این وضعیت می‌تواند در برخورد سورس پروژه با کتابخانه‌های باینری هسته Wi-Fi مانند \code{libnet80211.a} ظاهر شود و در پایان با پیامی شبیه \code{collect2: error: ld returned 1 exit status} خاتمه یابد.
+
+راهنمای رسمی Arduino IDE پروژه Marauder افزودن گزینه \code{-zmuldefs} به تنظیمات پیونددهنده خانواده برد را برای این وضعیت پیشنهاد می‌کند. این گزینه اجازه می‌دهد پیونددهنده وجود چند تعریف را تحمل کند؛ بنابراین باید نسخه اصلی \code{platform.txt} نگهداری شود تا تغییر قابل بازگشت باشد.
+
+\subsection{اعمال اصلاح روی platform.txt}
+در حساب کاربری مورد استفاده، فایل هدف در مسیر زیر قرار داشت:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+MARAUDER_PLATFORM_FILE="/home/epo/.arduino15/packages/esp32/hardware/esp32/2.0.10/platform.txt"
+\end{lstlisting}
+\end{latin}
+
+در یک حساب دیگر، مسیر قابل‌حمل زیر مناسب‌تر است:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+MARAUDER_PLATFORM_FILE="$HOME/.arduino15/packages/esp32/hardware/esp32/2.0.10/platform.txt"
+test -f "$MARAUDER_PLATFORM_FILE" && echo "platform.txt found"
+\end{lstlisting}
+\end{latin}
+
+اگر فایل پیدا نشد، نسخه‌های نصب‌شده مشخص می‌شوند:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+find "$HOME/.arduino15/packages/esp32/hardware/esp32" \
+  -maxdepth 2 -name platform.txt -print
+\end{lstlisting}
+\end{latin}
+
+پس از تأیید مسیر، نسخه پشتیبان تهیه و گزینه پیونددهنده افزوده شد:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+cp "$MARAUDER_PLATFORM_FILE" "${MARAUDER_PLATFORM_FILE}.backup"
+
+sed -i '/^compiler\.c\.elf\.libs\.esp32s3=/ {
+/-zmuldefs/! s/$/ -zmuldefs/
+}' "$MARAUDER_PLATFORM_FILE"
+
+grep -n '^compiler\.c\.elf\.libs\.esp32s3=' \
+  "$MARAUDER_PLATFORM_FILE"
+\end{lstlisting}
+\end{latin}
+
+خروجی باید دقیقاً یک خط برای \code{compiler.c.elf.libs.esp32s3} نشان دهد و \code{-zmuldefs} در انتهای آن وجود داشته باشد. اگر تغییر باعث مشکل شد، فایل اصلی بازگردانده می‌شود:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+cp "${MARAUDER_PLATFORM_FILE}.backup" "$MARAUDER_PLATFORM_FILE"
+\end{lstlisting}
+\end{latin}
+
+پس از این تغییر، Arduino IDE بسته و دوباره باز می‌شود تا فایل پلتفرم مجدداً خوانده شود؛ سپس \eng{Verify} اجرا می‌گردد.
+
+\section{مرحله ششم: کامپایل و بارگذاری روی برد}
+\subsection{کنترل پیش از Upload}
+پیش از بارگذاری، موارد زیر بررسی شدند:
+\begin{itemize}
+  \item برد \eng{ESP32S3 Dev Module} و پورت صحیح انتخاب شده‌اند.
+  \item چهار تنظیم جدول \ref{tab:board-settings} اعمال شده‌اند.
+  \item کابل USB قابلیت انتقال داده دارد.
+  \item فرآیند \eng{Verify} بدون خطا تکمیل می‌شود.
+  \item برنامه دیگری پورت سریال را باز نگه نداشته است.
+\end{itemize}
+
+\subsection{اجرای Upload و ورود دستی به Download Mode}
+روی آیکون فلش رو به راست \eng{Upload} در نوار بالای Arduino IDE کلیک شد. اگر خروجی روی پیام \code{Connecting...} متوقف شود، توالی زیر انجام می‌شود:
+\begin{enumerate}
+  \item کلید فیزیکی \eng{BOOT} نگه داشته شود.
+  \item کلید \eng{RESET (EN)} یک بار فشرده و رها شود.
+  \item کلید \eng{BOOT} رها شود تا برد وارد \eng{Download Mode} گردد.
+  \item تا پایان انتقال صبر شود.
+\end{enumerate}
+
+نمایش پیام زیر نشان‌دهنده پایان موفق بارگذاری است:
+\begin{latin}
+\begin{lstlisting}[language=text]
+Leaving... Hard resetting via RTS pin...
+\end{lstlisting}
+\end{latin}
+این پیام موفقیت انتقال و درخواست بازنشانی را نشان می‌دهد. برای تأیید کامل عملکرد، آزمون سریال مرحله بعد نیز باید انجام شود.
+
+\section{مرحله هفتم: راه‌اندازی Serial Monitor}
+\begin{enumerate}
+  \item از گوشه بالای راست Arduino IDE روی آیکون ذره‌بین کلیک شود یا کلیدهای \eng{Ctrl + Shift + M} فشرده شوند.
+  \item نرخ ارتباط روی \eng{115200 Baud} قرار گیرد.
+  \item گزینه \eng{Line Ending} روی \eng{Both NL \& CR} تنظیم شود. اگر فرمان‌ها پاسخ ندادند، حالت \eng{Newline} نیز آزمایش شود.
+  \item کلید فیزیکی \eng{RESET (EN)} یک بار فشرده شود.
+  \item نمایش متن آغازین و لوگوی Marauder کنترل شود.
+  \item با مشاهده پرامپت \code{\#}، فرمان \code{help} ارسال شود.
+\end{enumerate}
+
+در صورت مشاهده نویسه‌های ناخوانا، محتمل‌ترین علت نرخ باود اشتباه است. اگر هیچ خروجی دیده نمی‌شود، تنظیم \eng{USB CDC On Boot}، پورت انتخاب‌شده، کابل و فشردن Reset باید دوباره بررسی شوند.
+
+\section{مرحله هشتم: اعتبارسنجی رابط خط فرمان}
+\subsection{آزمون اولیه help و channel}
+ابتدا فهرست فرمان‌ها و سپس وضعیت کانال رادیویی درخواست شد:
+\begin{latin}
+\begin{lstlisting}[language=text]
+#help
+#channel
+\end{lstlisting}
+\end{latin}
+فرمان \code{help} نشان می‌دهد رابط \eng{CLI} فعال است. فرمان \code{channel} وضعیت کانال فعلی را گزارش می‌کند و شکل \code{channel -s <channel>} برای تنظیم کانال به‌کار می‌رود.
+
+\subsection{خروجی کامل help ثبت‌شده در آزمایش}
+\begin{latin}
+\begin{lstlisting}[language=text,basicstyle=\scriptsize\ttfamily]
+#help
+============ Commands ============
+channel [-s <channel>]
+settings [-s <setting> enable/disable>]/[-r]
+clearlist -a/-c/-s
+reboot
+update -s/-w
+ls <directory>
+protocolinfo
+led -s <hex color>/-p <rainbow>
+gpsdata
+gps [-t] [-g] <fix/sat/lon/lat/alt/date/accuracy/text/nmea>
+    [-n] <native/all/gps/glonass/galileo/navic/qzss/beidou>
+         [-b = use BD vs GB for beidou]
+nmea
+gpspoi -s/-m/-e
+gpstracker -c <start/stop>
+evilportal [-c start [-w html.html]/sethtml <html.html>]
+karma -p <index>
+packetcount
+pingscan
+arpscan [-f]
+portscan [-a -t <ip index>]/[-s <ssh/telnet/dns/http/smtp/https/rdp>]
+foxhunt -w <ap>/-s <ap> <station>/-b <ble>/-t <findmy>/-f <flipper>/-p <pineapple>/-m <multissid>
+scanall
+sniffraw
+sniffbeacon
+sniffprobe
+sniffpwn
+sniffpinescan
+sniffmultissid
+sniffdeauth
+sniffpmkid [-c <channel>][-d][-l]
+sniffsae
+stopscan [-f]
+mactrack
+attack -t <quiet/csa/sae/beacon [-l/-r/-a]/deauth [-c]/[-s <src mac>] [-d <dst mac>]/probe/rickroll/badmsg [-c]/sleep [-c]>
+info [-a <index>]
+list -s
+list -a
+list -c
+list -t
+list -i
+list -p
+list -b
+list -f
+list -x
+list -m
+select -a/-s/-c <index (comma separated)>/-f "equals <String> or contains <String>"
+ssid -a [-g <count>/-n <name>]
+ssid -r <index>
+save -a/-s
+load -a/-s
+join -a <index> -p <password>/-s
+randapmac
+randstamac
+cloneapmac [-a <index>]
+clonestamac [-s <index>]
+add -a -b <mac> [-ch <channel>] [-e <ssid>]
+add -c -b <mac> -ap <ap_index>
+upload -d <wdg/wigle/both>
+brightness [-c cycle] [-s <0-9>]
+==================================
+\end{lstlisting}
+\end{latin}
+
+\section{مرجع توضیحی فرمان‌های CLI}
+معنای دقیق برخی گزینه‌ها ممکن است میان نسخه‌های فریم‌ور تغییر کند. این جدول بر اساس خروجی ثبت‌شده دستگاه و مستندات رسمی پروژه تنظیم شده است؛ خروجی \code{help} همان نسخه نصب‌شده، مرجع نهایی نحو فرمان است.
+
+\subsection{مدیریت عمومی، تنظیمات و ذخیره‌سازی}
+\begin{longtable}{>{\raggedright\arraybackslash}p{4.3cm} >{\raggedleft\arraybackslash}p{11cm}}
+\toprule \textbf{فرمان} & \textbf{کارکرد} \\ \midrule \endhead
+\code{channel} & نمایش کانال فعلی رادیو؛ گزینه \code{-s} کانال را تنظیم می‌کند. \\
+\code{settings} & نمایش یا تغییر تنظیمات ماندگار فریم‌ور؛ \code{-s} یک تنظیم را فعال یا غیرفعال می‌کند و \code{-r} تنظیمات را بازنشانی می‌کند. \\
+\code{clearlist -a/-c/-s} & پاک‌کردن فهرست نقاط دسترسی، کلاینت‌ها یا SSIDها. پاک‌کردن فهرست AP ممکن است فهرست ایستگاه‌های وابسته را نیز پاک کند. \\
+\code{reboot} & راه‌اندازی مجدد برد و فریم‌ور. \\
+\code{update -s/-w} & آغاز مسیر به‌روزرسانی متناسب با گزینه و سخت‌افزار یا نسخه فریم‌ور؛ پیش از اجرا باید مستندات همان نسخه کنترل شود. \\
+\code{ls <directory>} & نمایش محتویات یک مسیر در سامانه فایل قابل‌دسترسی فریم‌ور، مانند حافظه داخلی یا کارت SD. \\
+\code{protocolinfo} & نمایش اطلاعات پروتکل‌ها یا قابلیت‌های ارتباطی شناخته‌شده توسط نسخه فریم‌ور. \\
+\code{led} & تنظیم رنگ LED با مقدار هگز یا فعال‌کردن الگوی رنگین‌کمانی. \\
+\code{brightness} & تغییر روشنایی نمایشگر یا LED در بازه صفر تا ۹؛ گزینه \code{-c cycle} حالت‌ها را پیمایش می‌کند. \\
+\code{save -a/-s} & ذخیره فهرست نقاط دسترسی یا SSIDها در حافظه برای استفاده بعدی. \\
+\code{load -a/-s} & بارگذاری مجدد فهرست نقاط دسترسی یا SSIDهای ذخیره‌شده. \\
+\code{upload -d <wdg/wigle/both>} & بارگذاری داده ثبت‌شده در قالب یا مقصد پشتیبانی‌شده؛ نیازمند پیکربندی شبکه و حساب متناظر است. \\
+\bottomrule
+\end{longtable}
+
+\subsection{GPS و ثبت موقعیت}
+\begin{longtable}{>{\raggedright\arraybackslash}p{4.3cm} >{\raggedleft\arraybackslash}p{11cm}}
+\toprule \textbf{فرمان} & \textbf{کارکرد} \\ \midrule \endhead
+\code{gpsdata} & نمایش داده‌های جاری دریافت‌شده از ماژول GPS. \\
+\code{gps} & درخواست یا تنظیم نوع داده GPS مانند تثبیت موقعیت، تعداد ماهواره، طول و عرض جغرافیایی، ارتفاع، تاریخ، دقت یا متن NMEA؛ منظومه ماهواره‌ای نیز قابل انتخاب است. \\
+\code{nmea} & نمایش یا پایش جملات استاندارد NMEA تولیدشده توسط گیرنده GPS. \\
+\code{gpspoi -s/-m/-e} & مدیریت نقطه مورد علاقه مکانی؛ گزینه‌ها متناسب با نسخه برای شروع، علامت‌گذاری یا پایان عملیات استفاده می‌شوند. \\
+\code{gpstracker -c start/stop} & شروع یا توقف ثبت مسیر GPS. \\
+\bottomrule
+\end{longtable}
+
+\subsection{پایش شبکه و خدمات میزبان}
+\begin{longtable}{>{\raggedright\arraybackslash}p{4.3cm} >{\raggedleft\arraybackslash}p{11cm}}
+\toprule \textbf{فرمان} & \textbf{کارکرد} \\ \midrule \endhead
+\code{packetcount} & شمارش فریم‌های Wi-Fi مربوط به AP یا Stationهای انتخاب‌شده؛ این حالت فایل PCAP تولید نمی‌کند. \\
+\code{pingscan} & پیمایش آدرس‌های شبکه متصل با ICMP و ثبت میزبان‌های پاسخ‌گو؛ فقط روی شبکه مجاز استفاده شود. \\
+\code{arpscan [-f]} & شناسایی میزبان‌های شبکه محلی با ARP؛ گزینه \code{-f} رفتار سریع یا اجباری نسخه را فعال می‌کند. \\
+\code{portscan} & بررسی سرویس‌های متداول روی میزبان انتخاب‌شده؛ فقط برای دارایی‌های تحت مالکیت یا دارای مجوز آزمون. \\
+\code{scanall} & اسکن نقاط دسترسی و ایستگاه‌ها، گردش خودکار میان کانال‌ها و ذخیره نتایج در فهرست‌های داخلی. \\
+\code{stopscan [-f]} & توقف اسکن، شنود یا عملیات جاری؛ \code{-f} می‌تواند اتصال WLAN را نیز قطع کند. \\
+\code{mactrack} & پایش مشاهده‌شدن یک آدرس MAC انتخاب‌شده و تغییرات قدرت سیگنال آن برای ردیابی آزمایشگاهی. \\
+\code{info [-a <index>]} & نمایش جزئیات مورد ذخیره‌شده؛ گزینه \code{-a} اطلاعات AP با اندیس مشخص را گزارش می‌کند. \\
+\code{list -a/-c/-s} & نمایش فهرست نقاط دسترسی، کلاینت‌ها یا SSIDهای ذخیره‌شده. \\
+\code{list -t/-i/-p/-b/-f/-x/-m} & نمایش فهرست‌های تخصصی دیگر؛ نوع دقیق هر گزینه به نسخه فریم‌ور و قابلیت سخت‌افزار وابسته است. \\
+\code{select} & انتخاب یا لغو انتخاب اندیس‌های فهرست AP، SSID یا Client؛ فیلتر متنی \code{equals} و \code{contains} نیز پشتیبانی می‌شود. \\
+\code{join} & اتصال به AP انتخاب‌شده با گذرواژه یا تنظیمات ذخیره‌شده. \\
+\bottomrule
+\end{longtable}
+
+\subsection{شنود و تحلیل فریم}
+\begin{longtable}{>{\raggedright\arraybackslash}p{4.3cm} >{\raggedleft\arraybackslash}p{11cm}}
+\toprule \textbf{فرمان} & \textbf{کارکرد} \\ \midrule \endhead
+\code{sniffraw} & دریافت و ثبت فریم‌های خام 802.11 در محدوده قابلیت رادیو و نسخه فریم‌ور. \\
+\code{sniffbeacon} & پایش فریم‌های Beacon که APها برای اعلام حضور و مشخصات شبکه ارسال می‌کنند. \\
+\code{sniffprobe} & پایش Probe Request/Responseهای مورد استفاده در کشف شبکه. \\
+\code{sniffpwn} & پایش اعلان‌های دستگاه‌های Pwnagotchi در محیط آزمایش. \\
+\code{sniffpinescan} & پایش الگوهای مرتبط با WiFi Pineapple در نسخه پشتیبانی‌شده. \\
+\code{sniffmultissid} & پایش الگوهای چند SSID یا اعلان‌های متناظر با قابلیت MultiSSID. \\
+\code{sniffdeauth} & پایش فریم‌های Deauthentication و نمایش رخدادهای قطع ارتباط مشاهده‌شده. \\
+\code{sniffpmkid} & پایش داده‌های احراز هویت PMKID؛ گزینه‌ها کانال، نمایش یا ثبت را کنترل می‌کنند. \\
+\code{sniffsae} & پایش تبادل‌های SAE در شبکه‌های WPA3 برای تحلیل آزمایشگاهی. \\
+\bottomrule
+\end{longtable}
+
+\subsection{شناسه‌ها، MAC و ساخت فهرست}
+\begin{longtable}{>{\raggedright\arraybackslash}p{4.3cm} >{\raggedleft\arraybackslash}p{11cm}}
+\toprule \textbf{فرمان} & \textbf{کارکرد} \\ \midrule \endhead
+\code{ssid -a} & افزودن SSID؛ \code{-g} تعدادی نام تولید می‌کند و \code{-n} یک نام مشخص می‌افزاید. \\
+\code{ssid -r <index>} & حذف SSID با اندیس مشخص از فهرست. \\
+\code{randapmac} & تولید و اعمال آدرس MAC تصادفی برای نقش AP در محدوده پشتیبانی فریم‌ور. \\
+\code{randstamac} & تولید و اعمال آدرس MAC تصادفی برای نقش Station. \\
+\code{cloneapmac} & کپی آدرس MAC یک AP ذخیره‌شده برای آزمون کنترل‌شده. \\
+\code{clonestamac} & کپی آدرس MAC یک Station ذخیره‌شده برای آزمون کنترل‌شده. \\
+\code{add -a} & افزودن دستی یک AP با BSSID، کانال و SSID اختیاری به فهرست داخلی. \\
+\code{add -c} & افزودن دستی یک Client با MAC و پیوند آن به اندیس AP. \\
+\bottomrule
+\end{longtable}
+
+\subsection{قابلیت‌های فعال و تهاجمی}
+فرمان‌های این بخش می‌توانند ترافیک تولید کنند یا رفتار شبکه را تغییر دهند و فقط باید در محیط ایزوله و دارای مجوز اجرا شوند.
+\begin{longtable}{>{\raggedright\arraybackslash}p{4.3cm} >{\raggedleft\arraybackslash}p{11cm}}
+\toprule \textbf{فرمان} & \textbf{کارکرد کلی} \\ \midrule \endhead
+\code{evilportal} & راه‌اندازی یا پیکربندی پورتال آزمایشگاهی با فایل HTML انتخاب‌شده برای ارزیابی رابط Captive Portal. \\
+\code{karma} & شبیه‌سازی پاسخ آزمایشگاهی به درخواست‌های کشف شبکه برای ارزیابی رفتار اتصال خودکار دستگاه‌های تحت کنترل. \\
+\code{foxhunt} & حالت‌های مکان‌یابی تقریبی منابع Wi-Fi، BLE، Find My، Flipper، Pineapple یا MultiSSID بر پایه مشاهده و قدرت سیگنال. \\
+\code{attack -t ...} & انتخاب خانواده تولید فریم یا آزمون فعال مانند Quiet، CSA، SAE، Beacon، Deauth، Probe، Rickroll، Bad Message یا Sleep. گزارش حاضر فقط نحو help را ثبت می‌کند و اجرای آن علیه شبکه‌های ثالث مجاز نیست. \\
+\bottomrule
+\end{longtable}
+
+\section{مرحله نهم: اجرای اسکن عملیاتی}
+\subsection{ترتیب صحیح فرمان‌ها}
+فرمان‌های زیر به همین ترتیب اجرا شدند:
+\begin{latin}
+\begin{lstlisting}[language=text]
+#scanall
+#stopscan
+#list -a
+\end{lstlisting}
+\end{latin}
+\begin{enumerate}
+  \item \code{scanall}: اسکن APها و Stationها را آغاز می‌کند، میان کانال‌ها گردش می‌کند و نتایج را در حافظه داخلی نگه می‌دارد.
+  \item \code{stopscan}: فرآیند فعال را متوقف می‌کند تا فهرست برای بررسی ثابت بماند. استفاده از \code{-f} در این آزمون لازم نبود.
+  \item \code{list -a}: تمام نقاط دسترسی ذخیره‌شده را با اندیس، کانال، SSID یا BSSID و RSSI نمایش می‌دهد.
+\end{enumerate}
+
+\subsection{خروجی ثبت‌شده}
+\begin{latin}
+\begin{lstlisting}[language=text,basicstyle=\scriptsize\ttfamily]
+> #list -a
+[0][CH:2] Neterbit-3318DC -87
+[1][CH:4] TP-Link_6D3E -75
+[2][CH:5] POCO X5 Pro 5G -82
+[3][CH:6]  AV -81
+[4][CH:6] Sharif-WiFi -90
+[5][CH:6] Sharif-WiFi -56
+[6][CH:6] Sharif-WiFi -90
+[7][CH:6] Sharif-WiFi -91
+[8][CH:6] 14:77:40:76:75:bf -87
+[9][CH:11] Sharif-WiFi -49
+[10][CH:11] ali's Galaxy A34 5G -76
+[11][CH:11] Sharif-WiFi -91
+[12][CH:1] Sharif-WiFi -64
+[13][CH:1] Sharif-WiFi -78
+[14][CH:1] Sharif-WiFi -83
+[15][CH:1] Sharif-WiFi -86
+[16][CH:1] Sharif-WiFi -85
+[17][CH:6] Galaxy A34 5G 4B4F -80
+[18][CH:6] Irancell-jadid -91
+[19][CH:11] BehPardakht-L443_B568 -92
+0 selected
+\end{lstlisting}
+\end{latin}
+
+\subsection{نحوه خواندن هر سطر}
+برای نمونه، سطر زیر تفسیر می‌شود:
+\begin{latin}
+\begin{lstlisting}[language=text]
+[9][CH:11] Sharif-WiFi -49
+\end{lstlisting}
+\end{latin}
+\begin{itemize}
+  \item \code{[9]} اندیس داخلی رکورد است و در فرمان‌هایی مانند \code{info -a 9} یا \code{select -a 9} استفاده می‌شود.
+  \item \code{[CH:11]} نشان می‌دهد AP روی کانال ۱۱ مشاهده شده است.
+  \item \code{Sharif-WiFi} نام شبکه یا SSID گزارش‌شده است.
+  \item \code{-49} مقدار RSSI بر حسب dBm است. عددی که به صفر نزدیک‌تر باشد معمولاً سیگنال قوی‌تری را نشان می‌دهد.
+  \item \code{0 selected} یعنی هیچ AP از فهرست برای عملیات بعدی انتخاب نشده است.
+\end{itemize}
+
+در این اسکن، رکورد شماره ۹ با RSSI برابر \eng{-49 dBm} قوی‌ترین مشاهده فهرست است و رکورد شماره ۱۹ با \eng{-92 dBm} از ضعیف‌ترین موارد است. این مقادیر لحظه‌ای‌اند و به فاصله، موانع، جهت آنتن، توان فرستنده و تداخل وابسته هستند. RSSI قوی به‌تنهایی نرخ خطای بسته، تأخیر یا کیفیت نهایی لینک را اثبات نمی‌کند.
+
+کانال‌های ۱، ۶ و ۱۱ بیشترین حضور را در خروجی دارند. وجود چند BSSID با SSID یکسان می‌تواند ناشی از چند اکسس‌پوینت، چند رادیو یا زیرساخت سازمانی با نام شبکه مشترک باشد. کانال‌های ۲، ۴ و ۵ در باند ۲٫۴ گیگاهرتز با کانال‌های مجاور هم‌پوشانی طیفی دارند؛ بااین‌حال برای نتیجه‌گیری قطعی درباره تداخل باید پهنای کانال، زمان اندازه‌گیری و شاخص‌های بار کانال نیز ثبت شوند.
+
+\subsection{نمایش جزئیات AP شماره ۹}
+فرمان زیر اجرا شد:
+\begin{latin}
+\begin{lstlisting}[language=text]
+#info -a 9
+\end{lstlisting}
+\end{latin}
+
+این فرمان اطلاعات رکورد AP با اندیس ۹ را از فهرست جاری درخواست می‌کند. بسته به نسخه فریم‌ور، خروجی می‌تواند شامل SSID، BSSID، کانال، RSSI، نوع رمزگذاری و سایر فراداده‌های ذخیره‌شده باشد. چون متن خروجی \code{info} در یادداشت آزمایش موجود نیست، هیچ مقدار اضافی برای آن حدس زده نشده است. برای تکمیل اجرای بعدی، خروجی کامل این فرمان باید عیناً ذخیره شود.
+
+\section{چک‌لیست بازتولید کامل}
+\begin{longtable}{>{\centering\arraybackslash}p{1.2cm} >{\raggedleft\arraybackslash}p{10.7cm} >{\centering\arraybackslash}p{2.8cm}}
+\toprule \textbf{ردیف} & \textbf{کنترل} & \textbf{وضعیت مورد انتظار} \\ \midrule \endhead
+1 & دریافت و استخراج Arduino IDE از نشانی رسمی & فایل \code{arduino-ide} موجود \\
+2 & اصلاح مجوز اجرای فایل اصلی و Backend & برنامه اجرا می‌شود \\
+3 & اصلاح \code{chrome-sandbox} و پرهیز از استفاده دائمی \code{--no-sandbox} & اجرای عادی IDE \\
+4 & اتصال VPN پیش از Boards/Library Manager & دانلود بدون خطای شبکه \\
+5 & نصب \eng{esp32 by Espressif Systems 2.0.10} & پوشه نسخه موجود \\
+6 & عضویت کاربر در \code{dialout} و ورود مجدد & پورت قابل انتخاب \\
+7 & بازکردن \code{esp32_marauder.ino} و تنظیم چهار گزینه Tools & تنظیمات جدول \ref{tab:board-settings} \\
+8 & نصب پنج کتابخانه از Library Manager & نبود خطای کتابخانه \\
+9 & نصب \eng{ESP32Ping} و \eng{ESPAsyncWebServer} & پوشه‌ها موجود \\
+10 & پشتیبان‌گیری و افزودن \code{-zmuldefs} & grep گزینه را نشان می‌دهد \\
+11 & اجرای Verify & پایان بدون خطا \\
+12 & اجرای Upload و ورود به Download Mode در صورت نیاز & پیام \code{Leaving...} \\
+13 & تنظیم Serial Monitor روی 115200 و خط جدید مناسب & لوگو و پرامپت \code{\#} \\
+14 & اجرای \code{help} و \code{channel} & پاسخ معتبر CLI \\
+15 & اجرای \code{scanall}، \code{stopscan} و \code{list -a} & فهرست APها \\
+16 & اجرای \code{info -a 9} & جزئیات رکورد ۹ \\
+\bottomrule
+\end{longtable}
+
+\section{راهنمای عیب‌یابی سریع}
+\begin{longtable}{>{\raggedleft\arraybackslash}p{5.1cm} >{\raggedleft\arraybackslash}p{10.1cm}}
+\toprule \textbf{نشانه} & \textbf{اقدام پیشنهادی} \\ \midrule \endhead
+خطای \eng{chrome-sandbox} & کنترل مسیر اجرا، مالکیت \code{root:root} و مجوز \code{4755}. از \code{--no-sandbox} فقط برای تشخیص موقت استفاده شود. \\
+خطای \eng{Permission denied} برای Backend & اجرای \code{chmod -R +x resources/app/lib/backend/resources/} از ریشه پوشه IDE. \\
+خطای دانلود بسته یا کتابخانه & برقراری VPN پیش از بازکردن IDE، تکرار نصب و ثبت نام فایل شکست‌خورده از لاگ. \\
+مسیر \code{platform.txt} وجود ندارد & کنترل نصب دقیق 2.0.10 و استفاده از \code{find} برای یافتن نسخه‌های واقعی نصب‌شده. \\
+کتابخانه پیدا نمی‌شود & کنترل پوشه \code{~/Arduino/libraries}، نام پوشه، وجود چند نسخه و راه‌اندازی مجدد IDE. \\
+خطای \eng{multiple definition} & کنترل پشتیبان، خط \code{compiler.c.elf.libs.esp32s3} و وجود یک‌باره \code{-zmuldefs}. \\
+آپلود روی \code{Connecting...} می‌ماند & اجرای توالی BOOT، RESET، رهاکردن BOOT؛ کنترل پورت و کابل داده. \\
+پورت سریال دیده نمی‌شود & خروج و ورود مجدد بعد از افزودن به \code{dialout}، تعویض کابل یا درگاه و کنترل \code{dmesg}. \\
+خروجی سریال ناخواناست & تنظیم نرخ روی 115200 و فشردن RESET. \\
+فرمان CLI اجرا نمی‌شود & کنترل Line Ending روی Both NL \& CR یا Newline و وجود پرامپت \code{\#}. \\
+\bottomrule
+\end{longtable}
+
+\section{نتیجه‌گیری}
+فرآیند نصب و راه‌اندازی ESP32 Marauder روی ESP32-S3 با موفقیت از مرحله آماده‌سازی Arduino IDE تا اسکن عملیاتی شبکه تکمیل شد. سه نقطه حساس این فرآیند عبارت بودند از دسترسی صحیح برنامه و پورت سریال در لینوکس، ثابت‌نگه‌داشتن هسته ESP32 روی نسخه 2.0.10 و رفع خطای چندتعریفی پیونددهنده با اصلاح قابل‌بازگشت فایل \code{platform.txt}. خروجی ثبت‌شده \code{list -a} نیز عملکرد اسکن، گردش کانال و ذخیره فهرست نقاط دسترسی را تأیید کرد.
+
+برای اینکه اجرای آینده کاملاً قابل ممیزی باشد، باید نام دو فایل وابستگی که دستی دریافت شدند، شناسه دقیق نسخه سورس Marauder، مدل و ظرفیت حافظه برد، خروجی کامل Verify، اندازه باینری و خروجی \code{info -a 9} نیز همراه گزارش ذخیره شوند.
+
+\section{منابع فنی}
+\begin{enumerate}
+  \item صفحه رسمی دریافت Arduino IDE: \url{https://www.arduino.cc/en/software/}
+  \item راهنمای رسمی نصب Marauder در Arduino IDE: \url{https://github.com/justcallmekoko/ESP32Marauder/wiki/arduino-ide-setup}
+  \item راهنمای رسمی رابط خط فرمان Marauder: \url{https://github.com/justcallmekoko/ESP32Marauder/wiki/cli}
+  \item توضیح رسمی Scan All: \url{https://github.com/justcallmekoko/ESP32Marauder/wiki/scan-all}
+  \item توضیح رسمی Stop Scan: \url{https://github.com/justcallmekoko/ESP32Marauder/wiki/stopscan}
+  \item توضیح رسمی List: \url{https://github.com/justcallmekoko/ESP32Marauder/wiki/list}
+  \item مخزن ESP32Ping: \url{https://github.com/marian-craciunescu/ESP32Ping}
+  \item مخزن ESPAsyncWebServer مورد استفاده: \url{https://github.com/me-no-dev/ESPAsyncWebServer}
+\end{enumerate}
+
+\ifxepersianavailable\else\endR\fi
+\end{document}

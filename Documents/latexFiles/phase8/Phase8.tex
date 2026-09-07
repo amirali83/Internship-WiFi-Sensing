@@ -1,0 +1,495 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{top=2.5cm,bottom=2.5cm,left=2cm,right=2cm}
+\setlength{\headheight}{15pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{xurl}
+\usepackage{fontspec}
+
+% تنظیمات استایل کدها
+\definecolor{codebg}{rgb}{0.97,0.97,0.97}
+\definecolor{codeframe}{rgb}{0.85,0.85,0.85}
+\definecolor{cmdcolor}{rgb}{0.1,0.1,0.7}
+\definecolor{commentgreen}{rgb}{0.1,0.5,0.1}
+
+\lstdefinestyle{cli}{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{codeframe},
+    keywordstyle=\color{cmdcolor}\bfseries,
+    commentstyle=\color{commentgreen},
+    keepspaces=true,
+    columns=flexible,
+    tabsize=2,
+    showstringspaces=false
+}
+\lstset{style=cli}
+
+% مسیر اصلی کامپایل زی‌پرشین است؛ مسیر جایگزین برای سیستم فاقد آن در نظر گرفته شده است.
+\newcommand{\PersianFontName}{DejaVu Sans}
+\IfFontExistsTF{Vazirmatn}{\renewcommand{\PersianFontName}{Vazirmatn}}{%
+  \IfFontExistsTF{Amiri}{\renewcommand{\PersianFontName}{Amiri}}{}}
+\newif\ifxepersianavailable
+\IfFileExists{xepersian.sty}{\xepersianavailabletrue}{\xepersianavailablefalse}
+\ifxepersianavailable
+  \usepackage{xepersian}
+  \settextfont[Scale=1.02]{\PersianFontName}
+  \IfFontExistsTF{Noto Sans}{\setlatintextfont{Noto Sans}}{\setlatintextfont{DejaVu Sans}}
+\else
+  \usepackage[layout=sectioning.tabular]{babel}
+  \babelprovide[main,import]{persian}
+  \babelprovide[import]{english}
+  \babelfont[persian]{rm}[Scale=1.02]{\PersianFontName}
+  \IfFontExistsTF{Noto Sans}{\babelfont[english]{rm}{Noto Sans}}{\babelfont[english]{rm}{DejaVu Sans}}
+  \babelfont{tt}{DejaVu Sans Mono}
+  \TeXXeTstate=1
+  \newcommand{\lr}[1]{\foreignlanguage{english}{#1}}
+  \newenvironment{latin}{\par\beginL\selectlanguage{english}}{\endL\par}
+\fi
+\newcommand{\en}[1]{\lr{#1}}
+\newcommand{\cmd}[1]{\lr{\nolinkurl{#1}}}
+\hypersetup{colorlinks=true,linkcolor=blue!55!black,urlcolor=cyan!45!black,citecolor=blue!55!black,pdftitle={مرجع جامع ESP32 Marauder}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small مرجع جامع و گزارش فنی پروژه \en{ESP32 Marauder}}
+\lhead{\small تحلیل پروتکل‌های \en{Wi-Fi} و \en{BLE}}
+\cfoot{\thepage}
+
+\begin{document}
+
+\begin{titlepage}
+    \ifxepersianavailable\else\beginR\fi
+    \centering
+    \vspace*{1.5cm}
+    {\Huge\textbf{گزارش فنی و دانشنامه عملیاتی}}\\[0.6cm]
+    {\LARGE\textbf{پیاده‌سازی، خطایابی سطح کرنل و مرجع جامع فریم‌ور \en{ESP32 Marauder}}}\\[1.2cm]
+    
+    \textbf{نویسنده و گردآورنده:} گزارش آزمایشگاهی مهندسی و ارزیابی بی‌سیم\\
+    \textbf{سخت‌افزار هدف:} ماژول توسعه \en{ESP32-S3 Dev Module}\\
+    \textbf{سیستم‌عامل توسعه:} توزیع گنو/لینوکس \en{(Linux 64-bit)}\\
+    \textbf{محیط کامپایل:} \en{Arduino IDE 2.x}
+    \vfill
+    \begin{tcolorbox}[colback=codebg,colframe=codeframe,arc=2mm]
+        \centering
+        \small
+        این مستند مراحل راه‌اندازی، اصلاح خطاهای کامپایلر و لینکر لینوکس، تحلیل فریم‌های استاندارد \en{IEEE 802.11}، پروتکل بلوتوث کم‌مصرف \en{(BLE)}، ابزارهای شنود، اسکن، سناریوهای شبیه‌سازی و گردش‌کارهای پروژه را تشریح می‌کند.
+    \end{tcolorbox}
+    \vspace{0.8cm}
+    \today
+    \ifxepersianavailable\else\endR\fi
+\end{titlepage}
+
+\ifxepersianavailable\else\beginR\fi
+\tableofcontents
+\newpage
+
+\section{مفاهیم پایه و عملکرد سیستم}
+برای فهم کامل عملکرد این ابزار، درک سه مفهوم رادیویی در سطح لایه فیزیکی و پیوند داده الزامی است:
+
+\subsection{حالت شنود بی‌قید \en{(Promiscuous Mode)}}
+در کارکرد عادی، کارت شبکه دستگاه‌ها مجهز به فیلتر سخت‌افزاری است؛ یعنی بسته‌هایی که آدرس مقصد آن‌ها \en{(Destination MAC)} متعلق به خود کارت یا آدرس فراگیر نباشد، معمولاً کنار گذاشته می‌شوند. در حالت \textbf{شنود بی‌قید} \en{(Promiscuous Mode)}، دامنه فریم‌های تحویلی به نرم‌افزار افزایش می‌یابد و پردازنده فریم‌های قابل دریافت روی کانال جاری را بدون محدودشدن به آدرس خود دستگاه تحلیل می‌کند.
+
+\subsection{دسته‌بندی فریم‌های استاندارد \en{IEEE 802.11}}
+تمام ارتباطات وای‌فای از ۳ نوع فریم تشکیل می‌شوند:
+\begin{enumerate}
+    \item \textbf{فریم‌های داده} \en{(Data Frames)}: حامل بسته‌های اطلاعاتی کاربران و تبادلات شبکه.
+    \item \textbf{فریم‌های کنترلی} \en{(Control Frames)}: مدیریت دسترسی و هماهنگی کانال، مانند \en{RTS/CTS} و \en{ACK}.
+    \item \textbf{فریم‌های مدیریتی} \en{(Management Frames)}: مدیریت کشف و چرخه اتصال، مانند \en{Beacon}، \en{Probe Request/Response}، \en{Authentication} و \en{Deauthentication}.
+\end{enumerate}
+
+\subsection{تزریق مستقیم فریم \en{(Raw Frame Injection)}}
+قابلیتی سخت‌افزاری و نرم‌افزاری است که به چیپ اجازه می‌دهد فریم‌های بازسازی‌شده لایه پیوند داده را مستقیماً، بدون نیاز به پیوستن به شبکه یا احراز هویت اولیه، به آنتن فرستاده و منتشر نماید.
+
+\subsection{بسته‌های تبلیغاتی بلوتوث کم‌مصرف \en{(BLE Advertisement)}}
+تجهیزات بلوتوثی (شامل ساعت‌های هوشمند، هندزفری‌ها، تگ‌های مکان‌یاب و اکسسوری‌ها) پیش از برقراری هرگونه پیوند دوطرفه، بسته‌های کوتاهی تحت عنوان \lr{Advertisement Packets} روی ۳ کانال فرکانسی ۳۷، ۳۸ و ۳۹ به صورت همگانی مخابره می‌کنند تا حضور خود را به دستگاه‌های اطراف اطلاع دهند.
+
+\newpage
+\section{راه‌اندازی محیط لینوکس و رفع خطاهای سیستمی}
+
+\subsection{دانلود و استخراج Arduino IDE}
+نسخه رسمی لینوکس ۶۴ بیتی از تارنمای \lr{https://www.arduino.cc/en/software/} دریافت و در محیط کاربر استخراج گردید. سپس مجوزهای اجرایی به آن داده شد:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+chmod +x arduino-ide
+./arduino-ide
+\end{lstlisting}
+\end{latin}
+
+\subsection{رفع خطای امنیتی Electron Sandbox}
+به دلیل استفاده نرم‌افزار از چارچوب \en{Electron}، اجرای برنامه با خطای \en{Sandbox} ناشی از تنظیمات کرنل مواجه شد. این مسئله با اصلاح مالکیت و فعال‌سازی بیت \en{SUID} برطرف گردید:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+sudo chown root:root chrome-sandbox
+sudo chmod 4755 chrome-sandbox
+
+# اجرای مستقیم با لغو موقت سَندباکس در صورت عدم باز شدن:
+./arduino-ide --no-sandbox
+\end{lstlisting}
+\end{latin}
+
+\subsection{اعطای دسترسی اجرایی به منابع پردازشی}
+برای ممانعت از خطاهای قطع ارتباط هسته پس‌زمینه آردوینو:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+chmod -R +x resources/app/lib/backend/resources/
+\end{lstlisting}
+\end{latin}
+
+\subsection{تنظیم دسترسی کاربر به پورت‌های سریال}
+برای دسترسی آزاد و بدون نیاز به دسترسی کاربر ریشه به پورت‌های ارتباطی تراشه:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+sudo usermod -a -G dialout $USER
+\end{lstlisting}
+\end{latin}
+
+\subsection{تنظیم مخزن هسته و الزامات شبکه}
+با توجه به محدودیت‌های شبکه، اتصال \en{VPN} فعال شد تا کتابخانه‌ها و فایل‌های ابزارها کامل دریافت شوند. سپس آدرس مخزن رسمی شرکت سازنده در تنظیمات اضافه گردید:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+\end{lstlisting}
+\end{latin}
+در بخش \en{Boards Manager} بسته رسمی \en{esp32 by Espressif Systems} دقیقاً با نگارش \en{2.0.10} برای سازگاری با پروژه نصب شد.
+
+\newpage
+\section{پیکربندی بورد، مدیریت وابستگی‌ها و وصله لینکر}
+
+\subsection{تنظیم مشخصات سخت‌افزاری در منوی \en{Tools}}
+فایل اصلی سورس پروژه تحت عنوان \lr{\texttt{esp32\_marauder.ino}} باز شد و تنظیمات زیر اعمال گردید:
+\begin{itemize}
+    \item \textbf{برد} \en{(Board)}: انتخاب \en{ESP32S3 Dev Module}.
+    \item \textbf{راه‌اندازی سریال USB} \en{(USB CDC On Boot)}: انتخاب \en{Enabled} برای هدایت لاگ‌ها به درگاه بومی \en{USB}.
+    \item \textbf{پارتیشن‌بندی} \en{(Partition Scheme)}: انتخاب \en{Huge APP (3MB No OTA/1MB SPIFFS)} به دلیل حجم باینری فریم‌ور.
+    \item \textbf{سرعت بارگذاری} \en{(Upload Speed)}: انتخاب \en{921600} و، در صورت ناپایداری، \en{460800}.
+\end{itemize}
+
+\subsection{نصب کتابخانه‌های پیش‌نیاز}
+وابستگی‌های نرم‌افزاری از طریق \en{Library Manager} و دریافت مستقیم با \en{Git} نصب شدند:
+\begin{itemize}
+    \item \textbf{LinkedList} اثر \lr{Ivan Seidel}
+    \item \textbf{NimBLE-Arduino} اثر \lr{h2zero}
+    \item \textbf{ArduinoJson} اثر \lr{Benoit Blanchon}
+    \item \textbf{ESP32Time} اثر \lr{fbiego}
+    \item \textbf{EspSoftwareSerial} اثر \lr{Dirk Kaar, Peter Lerup}
+    \item \textbf{ESP32Ping} با دریافت دستی در پوشه کتابخانه‌ها:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+cd ~/Arduino/libraries
+git clone https://github.com/marian-craciunescu/ESP32Ping.git
+\end{lstlisting}
+\end{latin}
+    \item \textbf{ESPAsyncWebServer} سازگار با پروژه:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+cd ~/Arduino/libraries
+rm -rf ESPAsyncWebServer
+git clone https://github.com/me-no-dev/ESPAsyncWebServer.git
+\end{lstlisting}
+\end{latin}
+\end{itemize}
+
+\subsection{رفع خطای نمادهای تکراری لینکر \en{(Multiple Definition Fix)}}
+در حین کامپایل خطای تداخل توابع پردازش فریم و نماد \lr{index\_html} میان سورس پروژه و کتابخانه استاتیک هسته (\lr{libnet80211.a}) رخ داد. برای وادار کردن پیونددهنده به پذیرش اولین تعریف نمادها، از سوئیچ \lr{-zmuldefs} استفاده شد:
+\begin{latin}
+\begin{lstlisting}[language=bash]
+MARAUDER_PLATFORM_FILE="/home/epo/.arduino15/packages/esp32/hardware/esp32/2.0.10/platform.txt"
+
+cp "$MARAUDER_PLATFORM_FILE" "${MARAUDER_PLATFORM_FILE}.backup"
+
+sed -i '/^compiler\.c\.elf\.libs\.esp32s3=/ {
+/-zmuldefs/! s/$/ -zmuldefs/
+}' "$MARAUDER_PLATFORM_FILE"
+
+grep -n '^compiler\.c\.elf\.libs\.esp32s3=' "$MARAUDER_PLATFORM_FILE"
+\end{lstlisting}
+\end{latin}
+
+\subsection{بارگذاری فریم‌ور و راه‌اندازی مانیتور سریال}
+\begin{enumerate}
+    \item کلیک روی دکمه \textbf{Upload}. در صورت توقف روی پیام \lr{Connecting...}، کلید فیزیکی \textbf{BOOT} نگه داشته شده، کلید \textbf{RESET (EN)} فشرده و رها می‌شود، سپس کلید \textbf{BOOT} رها می‌گردد تا بورد وارد \lr{Download Mode} شود.
+    \item اتمام موفق عملیات با مشاهده پیام \lr{Hard resetting via RTS pin...} مشخص می‌گردد.
+    \item پنجره \textbf{Serial Monitor} با کلیدهای \lr{Ctrl+Shift+M} باز شده، نرخ باود روی \textbf{115200} و قالب خط روی \textbf{Both NL \& CR} تنظیم می‌گردد. با فشردن کلید ریست روی بورد، نشانگر پرامپت (\lr{\texttt{\#}}) فعال می‌شود.
+\end{enumerate}
+
+\newpage
+\section{مرجع ابزارهای پایش و شنود امواج \en{(Wi-Fi Sniffing)}}
+شنود غیرفعال در حالت معمول فریم جدیدی تولید نمی‌کند و داده‌های قابل دریافت روی کانال جاری را مشاهده می‌کند. بااین‌حال، عبارت «کاملاً غیرقابل‌ردگیری» از نظر فنی قابل تضمین نیست؛ رفتار کلی دستگاه، نشت‌های جانبی یا تغییر ناخواسته وضعیت رادیو می‌تواند قابل مشاهده باشد.
+
+\begin{longtable}{llp{8cm}}
+\caption{ابزارهای شنود غیرفعال و مشخصات عملکردی آن‌ها} \label{tab:sniffers} \\
+\toprule
+\textbf{دستور \en{CLI}} & \textbf{آرگومان‌ها} & \textbf{شرح و تحلیل فنی} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{دستور \en{CLI}} & \textbf{آرگومان‌ها} & \textbf{شرح و تحلیل فنی} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\lr{\texttt{sniffbeacon}} & ندارد & شنود فریم‌های بیکن اکسس‌پوینت‌ها برای ثبت مشخصات روترها. \\
+\lr{\texttt{sniffprobe}} & ندارد & ثبت فریم‌های \en{Probe Request/Response}. این فریم‌ها در برخی شرایط ممکن است نام شبکه مورد جست‌وجو را نشان دهند، اما در دستگاه‌های جدید تصادفی‌سازی MAC و اسکن غیرفعال، قابلیت استنتاج تاریخچه شبکه را محدود می‌کند. \\
+\lr{\texttt{sniffdeauth}} & ندارد & پایش فضا جهت ثبت فریم‌های قطع ارتباط مشکوک و ناگهانی. \\
+\lr{\texttt{sniffpmkid}} & \lr{[-c] [-d] [-l]} & ثبت فریم‌های احراز هویت دارای \en{PMKID}. مقدار \en{PMKID} خودِ گذرواژه یا کلید رمزنگاری نیست و تحلیل آن باید فقط در شبکه مجاز انجام شود. \\
+\lr{\texttt{sniffsae}} & ندارد & شنود تبادل پیام‌های \en{SAE Commit} در استاندارد \en{WPA3}. \\
+\lr{\texttt{sniffraw}} & ندارد & دریافت فریم‌های خام قابل مشاهده روی کانال. ذخیره \en{PCAP} به پشتیبانی نسخه فریم‌ور و حافظه هدف وابسته است. \\
+\lr{\texttt{sniffesp}} & ندارد & مانیتورینگ تبادلات مرتبط با \en{Espressif ESP-NOW}. \\
+\lr{\texttt{sniffpwn}} & ندارد & تشخیص اعلان‌ها یا الگوهای شناخته‌شده \en{Pwnagotchi}. \\
+\lr{\texttt{sniffpinescan}} & ندارد & ردیابی الگوهای پویش تجهیزات \en{WiFi Pineapple}. \\
+\lr{\texttt{packetcount}} & ندارد & شمارشگر تعداد فریم‌های دریافتی بر ثانیه جهت سنجش ترافیک کانال. \\
+\lr{\texttt{sigmon}} & ندارد & نمایش زنده تغییرات قدرت سیگنال هدف \en{(RSSI)}. \\
+\lr{\texttt{stopscan}} & \lr{[-f]} & توقف عملیات شنود یا پویش فعال در پردازنده. \\
+\end{longtable}
+
+\section{اسکن، تفکیک و مدیریت موجودیت‌ها در حافظه}
+برای ساختارمند کردن موجودیت‌های رادیویی کشف‌شده از دستورات زیر استفاده می‌شود:
+\begin{itemize}
+    \item \lr{\textbf{scanall}:} پویش چرخشی کلیه کانال‌ها و کشف هم‌زمان اکسس‌پوینت‌ها و کلاینت‌ها.
+    \item \lr{\textbf{scanap}:} پویش اختصاصی برای ثبت دکل‌ها و روترهای رادیویی.
+    \item \lr{\textbf{scansta}:} رصد کلاینت‌ها و ایستگاه‌های فعال متصل به شبکه‌ها.
+    \item \lr{\textbf{list [-a/-c/-s/-b]}:} چاپ فهرست اهداف در حافظه (روترها: \lr{-a}، کلاینت‌ها: \lr{-c}، شناسه‌ها: \lr{-s}، بلوتوث: \lr{-b}).
+    \item \lr{\textbf{select [-a/-c] <index>}:} انتخاب یک یا چند هدف برای تحلیل جهت‌دار یا ارزیابی‌های اختصاصی.
+    \item \lr{\textbf{info -a <index>}:} دریافت شناسنامه کامل یک اکسس‌پوینت اعم از مک‌آدرس، نوع رمزنگاری، کارخانه سازنده و وضعیت پشتیبانی از استانداردهای حفاظتی.
+    \item \lr{\textbf{mactrack}:} اعلام هشدار در صورت دیده شدن مجدد مک‌آدرس‌های ذخیره‌شده روی کانال جاری.
+    \item \lr{\textbf{clearlist [-a/-c/-s]}:} تخلیه جداول موقت حافظه جهت آزادسازی رم پردازنده.
+\end{itemize}
+
+\newpage
+\section{مرجع آزمون‌های تاب‌آوری پروتکل \en{Wi-Fi}}
+این آزمون‌ها برای ارزیابی پایداری درایورهای کلاینت و بررسی پشتیبانی از استانداردهای ایمن ارتباطی طراحی شده‌اند.
+
+\begin{tcolorbox}[colback=yellow!8,colframe=orange!65!black,arc=2mm,title={دامنه مجاز آزمایش}]
+فرمان‌های این بخش قادر به تولید فریم و ایجاد اختلال واقعی هستند. اجرای آن‌ها باید به محفظه \en{RF}، شبکه آزمایشگاهی یا تجهیزاتی محدود شود که مجوز صریح آزمونشان وجود دارد. ثبت نتیجه باید شامل زمان، کانال، دستگاه هدف، نسخه فریم‌ور و معیار توقف آزمایش باشد.
+\end{tcolorbox}
+
+\begin{longtable}{llp{8cm}}
+\caption{سناریوهای آزمون پروتکل‌های وای‌فای} \label{tab:wifi-attacks} \\
+\toprule
+\textbf{دستور CLI} & \textbf{زیرشاخه‌ها} & \textbf{شرح و سازوکار پروتکلی} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{دستور CLI} & \textbf{زیرشاخه‌ها} & \textbf{شرح و سازوکار پروتکلی} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\lr{\texttt{attack -t deauth}} & \lr{[-c] [-s] [-d]} & تولید فریم لغو اتصال برای بررسی پشتیبانی شبکه آزمایشگاهی از \en{IEEE 802.11w / PMF}. \\
+\lr{\texttt{attack -t beacon}} & \lr{[-l / -r / -a]} & تولید انبوه بیکن‌های جعلی (تصادفی، لیستی یا کپی‌برداری از محیط) جهت تست سرریز بافر در رابط کاربری دستگاه‌ها. \\
+\lr{\texttt{attack -t rickroll}} & ندارد & تولید بیکن‌های متوالی با متن شعر معروف برای تست کارایی رابط کاربری. \\
+\lr{\texttt{attack -t probe}} & ندارد & ارسال سیل‌آسای بسته‌های درخواست کاوش برای تست پایداری روترها. \\
+\lr{\texttt{attack -t csa}} & ندارد & انتشار فریم آزمایشی \en{Channel Switch Announcement} برای بررسی رفتار کلاینت‌های تحت کنترل. \\
+\lr{\texttt{attack -t badmsg}} & \lr{[-c]} & تزریق فریم‌های دارای خطا و بدقواره ساختاری جهت ارزیابی مدیریت خطای پشته وای‌فای سیستم‌عامل‌ها. \\
+\lr{\texttt{attack -t sleep}} & \lr{[-c]} & تولید فریم مدیریت توان برای ارزیابی رفتار حالت \en{Sleep} روی دستگاه آزمایشگاهی. \\
+\lr{\texttt{attack -t sae}} & ندارد & تولید فریم‌های \en{SAE} برای آزمون کنترل‌شده ظرفیت پردازشی پیاده‌سازی \en{WPA3}. \\
+\lr{\texttt{attack -t quiet}} & ندارد & تولید فریم‌های سکوت استاندارد \en{IEEE 802.11h} برای ارزیابی واکنش دستگاه تحت کنترل. \\
+\lr{\texttt{evilportal}} & \lr{-c start/sethtml} & راه‌اندازی پرتال اسیر \en{(Captive Portal)} برای ارزیابی آزمایشگاهی رابط اتصال. \\
+\lr{\texttt{karma}} & \lr{-p <index>} & پاسخ مثبت جعلی به درخواست‌های کاوش کلاینت‌ها جهت بررسی اتصال خودکار به شبکه‌های هم‌نام گذشته. \\
+\end{longtable}
+
+\section{مرجع عملیات بلوتوث کم‌مصرف \en{(Bluetooth Low Energy -- BLE)}}
+این بخش مربوط به پایش و شبیه‌سازی فریم‌های تبلیغاتی در باند ۲.۴ گیگاهرتز است.
+
+\begin{longtable}{llp{8cm}}
+\caption{ابزارها و قابلیت‌های ماژول بلوتوث کم‌مصرف} \label{tab:ble-features} \\
+\toprule
+\textbf{دستور \en{CLI}} & \textbf{حالت کاری} & \textbf{شرح و تحلیل فنی} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{دستور \en{CLI}} & \textbf{حالت کاری} & \textbf{شرح و تحلیل فنی} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\lr{\texttt{sniffbt}} & شنود عمومی & دریافت و چاپ مشخصات تمامی بسته‌های تبلیغاتی بلوتوث در محیط. \\
+\lr{\texttt{findmy}} & ردیابی \en{Find My} & پایش تخصصی فریم‌های شبکه مکان‌یابی اپل و شناسایی دستگاه‌های سازگار. \\
+\lr{\texttt{btwardrive}} & نقشه‌برداری مکانی & ثبت شناسه و نام دستگاه‌های بلوتوثی همراه مختصات \en{GPS}. \\
+\lr{\texttt{sourapple}} & آزمون \en{iOS} & تولید بسته‌های اعلان آزمایشی؛ فقط در محیط ایزوله و روی دستگاه تحت کنترل اجرا شود. \\
+\lr{\texttt{swiftpair}} & آزمون مایکروسافت & انتشار فریم‌های جفت‌سازی سریع جهت سنجش نحوه واکنش ویندوز. \\
+\lr{\texttt{samsungblespam}} & آزمون سامسونگ & ارسال اعلان‌های جفت‌سازی اختصاصی اکوسیستم گلکسی. \\
+\lr{\texttt{btspamall}} & آزمون سراسری & اجرای مجموعه الگوهای تبلیغاتی \en{BLE} در محیط ایزوله. \\
+\lr{\texttt{spoofat}} & شبیه‌سازی تگ & انتشار الگوی آزمایشی مشابه \en{AirTag} برای ارزیابی سامانه‌های تشخیص. \\
+\end{longtable}
+
+\newpage
+\section{فهرست کامل فرمان‌های موجود در فایل Markdown}
+فایل \en{Markdown} پیوست، نمایه‌ای از صفحات دانشنامه پروژه است و نحو کامل فرمان‌ها را ارائه نمی‌کند. جدول زیر تمام فرمان‌هایی را که در شاخه \en{Commandline > Commands} آن فایل آمده‌اند، بدون حذف پوشش می‌دهد. نام یا نحو بعضی فرمان‌ها بین نسخه‌های مختلف فریم‌ور تغییر کرده است؛ برای نمونه، برخی نسخه‌های جدید عملیات تبلیغات بلوتوثی را با فرمان یکپارچه \cmd{blespam} ارائه می‌کنند. بنابراین خروجی \cmd{help} روی همان دستگاه، مرجع نهایی قابلیت و نحو است.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{3.4cm} >{\raggedleft\arraybackslash}p{3.2cm} >{\raggedleft\arraybackslash}p{8.7cm}}
+\caption{پوشش کامل فرمان‌های فهرست‌شده در فایل \en{Markdown}}\label{tab:all-md-commands}\\
+\toprule
+\textbf{فرمان} & \textbf{حوزه} & \textbf{شرح کافی و محدودیت مهم} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{فرمان} & \textbf{حوزه} & \textbf{شرح کافی و محدودیت مهم} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\cmd{attack} & آزمون فعال & انتخاب یکی از مولدهای فریم آزمایشی وای‌فای. این فرمان می‌تواند ارتباط شبکه را مختل کند و فقط باید در شبکه ایزوله و دارای مجوز استفاده شود. نوع آزمون و آرگومان‌های معتبر باید از \cmd{help} همان نسخه خوانده شوند. \\
+\cmd{backupspiffs} & فایل‌سیستم & تهیه نسخه پشتیبان از محتوای پارتیشن \en{SPIFFS} روی رسانه‌ای که سخت‌افزار و فریم‌ور پشتیبانی می‌کنند. وجود فضای کافی و موفقیت نوشتن فایل باید بررسی شود. \\
+\cmd{restore} & فایل‌سیستم & بازیابی محتوای پشتیبان به \en{SPIFFS}. چون فایل‌های موجود ممکن است جایگزین شوند، صحت فایل ورودی و سازگاری نسخه باید پیش از اجرا کنترل شود. \\
+\cmd{btspamall} & \en{BLE} فعال & اجرای مجموعه الگوهای تبلیغاتی آزمایشی بلوتوث. در برخی نسخه‌ها معادل آن با \cmd{blespam -t all} عرضه شده است. ممکن است اعلان‌های مزاحم روی دستگاه‌های اطراف ایجاد کند. \\
+\cmd{btwardrive} & \en{BLE/GPS} & ثبت دستگاه‌های بلوتوث مشاهده‌شده همراه RSSI و، در صورت وجود قفل GPS، مختصات و زمان. کیفیت خروجی به آنتن، نرخ اسکن و کیفیت قفل موقعیت وابسته است. \\
+\cmd{channel} & رادیو & نمایش کانال جاری یا تنظیم کانال با گزینه نسخه مربوط. ثابت‌کردن کانال برای شنود هدفمند مفید است، در حالی که اسکن عمومی معمولاً کانال‌ها را پیمایش می‌کند. \\
+\cmd{clearlist} & حافظه & پاک‌کردن فهرست AP، Station یا SSID. پاک‌کردن فهرست AP می‌تواند فهرست Stationهای وابسته را نیز بی‌اعتبار کند. \\
+\cmd{evilportal} & وای‌فای فعال & راه‌اندازی پورتال اسیر آزمایشگاهی و انتخاب فایل HTML. نباید برای جمع‌آوری اطلاعات ورود اشخاص یا جعل سرویس واقعی استفاده شود. \\
+\cmd{findmy} & \en{BLE} & کار با دستگاه‌های سازگار با شبکه \en{Find My}، مانند فهرست‌کردن یا درخواست قابلیت پشتیبانی‌شده. عملکرد دقیق به سخت‌افزار، وضعیت دستگاه هدف و نسخه فریم‌ور وابسته است. \\
+\cmd{gpsdata} & \en{GPS} & نمایش داده‌های موقعیت، زمان، تعداد ماهواره‌ها و وضعیت قفل که از گیرنده GPS دریافت شده‌اند. نبود مختصات معتبر معمولاً به معنی فقدان قفل ماهواره‌ای است. \\
+\cmd{help} & عمومی & چاپ فهرست فرمان‌ها و نحو پذیرفته‌شده توسط همان بیلد. این فرمان باید نخستین مرجع عیب‌یابی اختلاف میان دانشنامه و فریم‌ور نصب‌شده باشد. \\
+\cmd{info} & حافظه & نمایش جزئیات یک رکورد ذخیره‌شده، معمولاً با اندیس AP. اندیس فقط تا زمانی معتبر است که فهرست پاک یا دوباره ساخته نشده باشد. \\
+\cmd{join} & شبکه محلی & اتصال برد به AP انتخاب‌شده با اطلاعات مجاز. اسکن‌های LAN و بارگذاری مستقیم معمولاً پس از اتصال معتبر قابل استفاده‌اند. \\
+\cmd{karma} & وای‌فای فعال & شبیه‌سازی پاسخ به برخی درخواست‌های کاوش برای آزمون رفتار اتصال خودکار دستگاه تحت کنترل. اجرای آن در محیط عمومی می‌تواند گمراه‌کننده و مختل‌کننده باشد. \\
+\cmd{led} & سخت‌افزار & تغییر رنگ یا الگوی LED روی بردهای پشتیبانی‌شده. نبود LED سازگار ممکن است باعث شود فرمان بدون اثر ظاهری باشد. \\
+\cmd{list} & حافظه & نمایش یکی از فهرست‌های داخلی مانند AP، Station، SSID، BLE یا سایر موجودیت‌های پشتیبانی‌شده. نوع فهرست با آرگومان تعیین می‌شود. \\
+\cmd{load} & فایل‌سیستم & بارگذاری فهرست AP یا SSID ذخیره‌شده. فایل باید متعلق به قالب مورد انتظار همان نسخه باشد. \\
+\cmd{mactrack} & پایش & دنبال‌کردن مشاهده مجدد یک MAC انتخاب‌شده و تغییر RSSI آن. RSSI فقط یک شاخص تقریبی فاصله است و برای مکان‌یابی دقیق کافی نیست. \\
+\cmd{packetcount} & پایش & شمارش فریم‌های مربوط به اهداف انتخاب‌شده برای مشاهده بار نسبی کانال. طبق مستندات پروژه، این قابلیت به‌تنهایی فایل \en{PCAP} تولید نمی‌کند. \\
+\cmd{pingscan} & \en{LAN} & پیمایش میزبان‌های پاسخ‌گو با \en{ICMP} پس از اتصال به شبکه مجاز. پاسخ‌ندادن یک میزبان الزاماً به معنی خاموش‌بودن آن نیست، زیرا دیواره آتش ممکن است ICMP را مسدود کند. \\
+\cmd{reboot} & دستگاه & راه‌اندازی مجدد پردازنده و فریم‌ور. فهرست‌ها یا داده‌های ذخیره‌نشده ممکن است از بین بروند. \\
+\cmd{recon} & پایش & حالت شناسایی یکپارچه برای مشاهده و دسته‌بندی فعالیت‌های رادیویی پشتیبانی‌شده. خروجی و گزینه‌های آن در نسخه‌های مختلف تفاوت دارد. \\
+\cmd{save} & فایل‌سیستم & ذخیره فهرست AP یا SSID روی حافظه پشتیبانی‌شده برای بارگذاری بعدی. موفقیت ایجاد فایل باید از خروجی فرمان یا مرور فایل‌ها تأیید شود. \\
+\cmd{scanap} & وای‌فای & اسکن نقاط دسترسی و افزودن آن‌ها به فهرست AP. اسکن‌های بعدی ممکن است به فهرست موجود اضافه شوند؛ پاک‌سازی دوره‌ای از مصرف بی‌رویه حافظه جلوگیری می‌کند. \\
+\cmd{scansta} & وای‌فای & مشاهده Stationها یا Clientها. در بسیاری از گردش‌کارها ابتدا باید APها اسکن شوند تا ارتباط Station با AP شناخته شود. \\
+\cmd{select} & حافظه & انتخاب یا لغو انتخاب اندیس‌های فهرست برای عملیات بعدی. تطابق متنی ممکن است برای انتخاب چند رکورد استفاده شود؛ نتیجه باید با \cmd{list} کنترل گردد. \\
+\cmd{settings} & دستگاه & مشاهده، تغییر یا بازنشانی تنظیمات ماندگار فریم‌ور. بازنشانی می‌تواند پیکربندی‌های قبلی را حذف کند. \\
+\cmd{sigmon} & پایش & نمایش تغییرات RSSI هدف انتخاب‌شده در زمان. جهت آنتن، بدن کاربر، چندمسیری و توان فرستنده بر نمودار اثر می‌گذارند. \\
+\cmd{sniffbt} & \en{BLE} & اسکن غیرفعال بسته‌های تبلیغاتی BLE و نمایش مشخصاتی مانند نام، MAC و RSSI در حدی که بسته منتشر می‌کند. \\
+\cmd{sniffraw} & وای‌فای & دریافت فریم‌های خام قابل مشاهده روی کانال. دامنه فریم‌های ثبت‌شده و ذخیره PCAP به چیپ، تنظیم کانال، نسخه و رسانه ذخیره‌سازی وابسته است. \\
+\cmd{sniffbeacon} & وای‌فای & ثبت Beaconهای APها برای مشاهده SSID، BSSID، کانال و قابلیت‌های اعلام‌شده. Beacon نشان‌دهنده وجود تبلیغ‌شده شبکه است، نه سلامت یا امکان اتصال. \\
+\cmd{sniffdeauth} & وای‌فای & مشاهده فریم‌های Deauthentication در محیط. وجود این فریم‌ها به‌تنهایی حمله را اثبات نمی‌کند؛ مدیریت عادی شبکه نیز می‌تواند آن‌ها را ایجاد کند. \\
+\cmd{sniffesp} & \en{ESP-NOW} & پایش فریم‌ها یا الگوهای مرتبط با پروتکل \en{ESP-NOW} در محدوده‌ای که نسخه و سخت‌افزار پشتیبانی می‌کنند. \\
+\cmd{sniffpmkid} & وای‌فای & ثبت فریم‌های دارای PMKID برای ارزیابی احراز هویت شبکه مجاز. PMKID خودِ گذرواژه یا کلید رمزنگاری نیست. \\
+\cmd{sniffpwn} & وای‌فای & شناسایی اعلان‌ها یا الگوهای شناخته‌شده دستگاه‌های \en{Pwnagotchi}. نتیجه مثبت یک شناسه نرم‌افزاری است و هویت شخص را اثبات نمی‌کند. \\
+\cmd{sniffsae} & وای‌فای & مشاهده تبادل‌های \en{SAE} مرتبط با \en{WPA3}. تحلیل باید فقط روی شبکه آزمایشگاهی و با رعایت حفاظت داده انجام شود. \\
+\cmd{sourapple} & \en{BLE} فعال & تولید الگوی تبلیغاتی آزمایشی مرتبط با اعلان‌های دستگاه‌های اپل. این قابلیت می‌تواند اعلان مزاحم یا ناپایداری ایجاد کند و نباید نزدیک دستگاه‌های ثالث اجرا شود. \\
+\cmd{spoofat} & \en{BLE} فعال & شبیه‌سازی تبلیغات یک ردیاب سازگار برای آزمون سامانه‌های تشخیص در محیط کنترل‌شده. خروجی نباید برای جعل یا ردیابی اشخاص استفاده شود. \\
+\cmd{ssid} & حافظه & افزودن، تولید یا حذف نام شبکه در فهرست SSID. این فهرست ورودی برخی آزمون‌های Beacon یا Portal است و به‌خودی‌خود شبکه واقعی ایجاد نمی‌کند. \\
+\cmd{stopscan} & کنترل عملیات & توقف اسکن، شنود یا عملیات جاری. گزینه اجباری در برخی نسخه‌ها اتصال WLAN را نیز قطع یا رابط Wi-Fi را غیرفعال می‌کند. \\
+\cmd{samsungblespam} & \en{BLE} فعال & تولید اعلان‌های جفت‌سازی آزمایشی برای دستگاه‌های سامسونگ؛ در نسخه‌های جدید ممکن است زیر فرمان یکپارچه \cmd{blespam} قرار گیرد. \\
+\cmd{swiftpair} & \en{BLE} فعال & تولید اعلان‌های آزمایشی \en{Swift Pair} برای بررسی رفتار ویندوز؛ در نسخه‌های جدید ممکن است با \cmd{blespam -t windows} ارائه شود. \\
+\cmd{update} & دستگاه & آغاز مسیر به‌روزرسانی فریم‌ور از وب یا رسانه ذخیره‌سازی، بسته به سخت‌افزار. انتخاب فایل نادرست می‌تواند دستگاه را غیرقابل بوت کند؛ نوع سخت‌افزار و فایل باید تطبیق داده شوند. \\
+\cmd{wardrive} & \en{Wi-Fi/GPS} & ثبت APها، زمان و مختصات GPS برای نقشه‌برداری مجاز. گزینه Station در نسخه‌های پشتیبانی‌شده به‌جای APها ایستگاه‌ها را ثبت می‌کند. \\
+\end{longtable}
+
+\newpage
+\section{موقعیت‌یابی، \en{Wardriving} و شکار جهت‌دار امواج \en{(Fox Hunting)}}
+
+\subsection{ناوبری ماهواره‌ای و نقشه‌برداری امواج \en{(Wardriving)}}
+با اتصال ماژول سخت‌افزاری \en{GPS} به پایه‌های ارتباطی، قابلیت نگاشت مشاهدات رادیویی بر نقشه فعال می‌گردد:
+\begin{itemize}
+    \item \lr{\textbf{gpsdata}:} نمایش طول، عرض، ارتفاع و وضعیت قفل به ماهواره‌ها.
+    \item \lr{\textbf{nmea}:} استخراج رشته‌های خام و استاندارد ماهواره‌ای.
+    \item \lr{\textbf{gpstracker -c <start/stop>}:} ثبت مداوم مسیر به همراه شبکه‌های کشف‌شده روی حافظه.
+    \item \lr{\textbf{upload -d wigle}:} آماده‌سازی یا ارسال لاگ‌ها برای سامانه نقشه‌برداری \en{WiGLE}، در صورت پشتیبانی و پیکربندی حساب.
+\end{itemize}
+
+\subsection{شکار روباه و رادیوگونیومتری \en{(Fox Hunting)}}
+یافتن موقعیت فیزیکی یک فرستنده بر اساس افزایش قدرت سیگنال دریافتی (\lr{RSSI}) با نزدیک شدن به منبع موج انجام می‌شود:
+\begin{itemize}
+    \item \lr{\texttt{foxhunt -w <ap\_index>}:} جهت‌یابی فیزیکی به سمت یک روتر مشخص.
+    \item \lr{\texttt{foxhunt -s <ap\_index> <sta\_index>}:} جهت‌یابی به سمت گوشی متصل به یک روتر.
+    \item \lr{\texttt{foxhunt -b <ble\_index>}:} جهت‌یابی به سمت یک دیوایس بلوتوثی در فضا.
+    \item \lr{\texttt{foxhunt -t <findmy\_index>}:} ردیابی فیزیکی یک تگ اپل مفقودشده.
+    \item \lr{\texttt{foxhunt -f / -p}:} پایش الگوهای \en{Flipper Zero} یا \en{WiFi Pineapple} در محیط آزمایش.
+\end{itemize}
+
+\section{پویش شبکه محلی \en{(LAN Scanners)} و مدیریت فایل‌سیستم}
+
+\subsection{اسکن شبکه پس از اتصال}
+پس از ملحق شدن به یک شبکه مجاز با دستور \lr{\texttt{join -a <index> -p <pass>}}، ابزارهای شبکه فعال می‌شوند:
+\begin{itemize}
+    \item \lr{\textbf{pingscan}:} ارسال پیام‌های \en{ICMP Echo} برای شناسایی میزبان‌های پاسخ‌گو در شبکه مجاز.
+    \item \lr{\textbf{arpscan}:} ساخت نگاشت \en{IP-to-MAC} در شبکه محلی مجاز.
+    \item \lr{\textbf{portscan -a -t <ip>}:} بررسی سرویس‌های متداول مانند \en{SSH}، \en{Telnet}، \en{HTTP}، \en{HTTPS} و \en{RDP} روی میزبان تحت کنترل.
+\end{itemize}
+
+\subsection{مدیریت حافظه \en{SPIFFS} و کارت \en{SD}}
+پارتیشن‌بندی داخلی بورد و ذخیره‌سازی داده‌ها از طریق دستورات اختصاصی مدیریت می‌شوند:
+\begin{itemize}
+    \item \lr{\textbf{ls <dir>}:} مشاهده فایل‌های ذخیره‌شده روی رسانه‌ای مانند کارت \en{SD}.
+    \item \lr{\textbf{save / load [-a/-s]}:} ذخیره یا بازخوانی لیست اکسس‌پوینت‌ها و نام‌های شبکه‌ها.
+    \item \lr{\textbf{backupspiffs}:} تهیه نسخه پشتیبان از محتوای \en{SPIFFS} روی کارت \en{SD} یا رسانه پشتیبانی‌شده.
+    \item \lr{\textbf{restore}:} بازیابی فایل‌ها از کارت حافظه به حافظه موقت فلش چیپ.
+\end{itemize}
+
+\newpage
+\section{گردش‌کارهای مرحله‌به‌مرحله \en{(Workflows)}}
+یک کاربر برای دستیابی به نتایج آزمایشگاهی باید دستورات را در قالب زنجیره‌های متوالی اجرا کند:
+
+\subsection{گردش‌کار ۱: پایش زنده سیگنال \en{(Signal Monitor Workflow)}}
+\begin{enumerate}
+    \item اجرای دستور \lr{\texttt{scanap}} برای شناسایی روترهای موجود در فضا.
+    \item ارسال \lr{\texttt{stopscan}} پس از گذشت ۱۰ ثانیه.
+    \item مشاهده لیست با \lr{\texttt{list -a}} و انتخاب شبکه هدف با \lr{\texttt{select -a <index>}}.
+    \item فراخوانی دستور \lr{\texttt{sigmon}} جهت رسم زنده تغییرات توان سیگنال با حرکت دادن آنتن بورد.
+\end{enumerate}
+
+\subsection{گردش‌کار ۲: ارزیابی احراز هویت \en{(PMKID Workflow)}}
+\begin{enumerate}
+    \item اسکن روترها با \lr{\texttt{scanap}} و متوقف‌سازی با \lr{\texttt{stopscan}}.
+    \item انتخاب ایندکس شبکه مورد نظر با \lr{\texttt{select -a <index>}}.
+    \item تنظیم رادیو روی کانال دقیق شبکه بر اساس اطلاعات جدول با \lr{\texttt{channel -s <ch>}}.
+    \item آغاز ثبت فریم‌های دارای \en{PMKID} با \lr{\texttt{sniffpmkid -c <ch>}} در شبکه آزمایشگاهی.
+    \item ارسال تک‌فریم جهت تحریک کلاینت به تبادل مجدد با \lr{\texttt{attack -t deauth}}.
+    \item ثبت خروجی و متوقف‌کردن فرآیند با \lr{\texttt{stopscan}}. مقدار \en{PMKID} کلید یا گذرواژه نیست.
+\end{enumerate}
+
+\subsection{گردش‌کار ۳: شبیه‌سازی پرتال اسیر \en{(Evil Portal Workflow)}}
+\begin{enumerate}
+    \item قرار دادن فایل اختصاصی \lr{\texttt{login.html}} روی کارت SD یا حافظه داخلی با دستور \lr{\texttt{restore}}.
+    \item تعریف نام شبکه جهت شبیه‌سازی با دستور \lr{\texttt{ssid -a -n "Free-Airport-WiFi"}}.
+    \item استارت سرور پرتال با دستور \lr{\texttt{evilportal -c start -w login.html}}.
+    \item پایش رخدادهای ورود کلاینت‌ها و ارزیابی رفتار مرورگر سیستم‌عامل‌ها روی پنجره کنسول.
+    \item خاتمه دادن به عملیات شبیه‌سازی با توقف سرویس.
+\end{enumerate}
+
+\subsection{گردش‌کار ۴: شبیه‌سازی ردیاب‌های اپل \en{(Spoofing AirTags Workflow)}}
+\begin{enumerate}
+    \item پاک‌سازی تعاریف پیشین بلوتوث با دستور \lr{\texttt{clearlist -s}}.
+    \item شروع ارسال بسته‌های تبلیغاتی شبیه‌سازی‌شده \en{Find My} با دستور \lr{\texttt{spoofat}} در محیط ایزوله.
+    \item ارزیابی زمان شناسایی تگ آزمایشگاهی توسط گوشی‌های تحت کنترل دارای \en{iOS} یا اندروید.
+    \item اتمام آزمایش با ارسال \lr{\texttt{stopscan}}.
+\end{enumerate}
+
+\section{تنظیمات سخت‌افزاری و دستورات سیستمی}
+\begin{itemize}
+    \item \lr{\textbf{channel [-s <ch>]}:} نمایش یا تثبیت کانال رادیویی فرکانس ۲.۴ گیگاهرتز (۱ تا ۱۴).
+    \item \lr{\textbf{led [-s <hex> / -p]}:} تغییر رنگ چراغ نئوپیکسل با کد رنگی یا اجرای الگوی رنگین‌کمان.
+    \item \lr{\textbf{brightness [-s <0-9>]}:} تنظیم سطح روشنایی نمایشگر سخت‌افزاری بورد.
+    \item \lr{\textbf{settings}:} نمایش و ویرایش پارامترهای ذخیره‌شده دائمی سیستم.
+    \item \lr{\textbf{reboot}:} بازنشانی و راه‌اندازی مجدد پردازنده \en{ESP32}.
+\end{itemize}
+
+\section{کنترل نسخه و منابع}
+چون فهرست فرمان‌ها همراه توسعه فریم‌ور تغییر می‌کند، نسخه Marauder، نوع برد و خروجی \cmd{help} باید کنار هر گزارش آزمایش ذخیره شوند. فایل \en{Markdown} پیوست یک نمایه از دانشنامه است و وجود یک نام در آن الزاماً به معنی پشتیبانی همان فرمان در تمام بیلدها نیست.
+
+منابع اصلی استفاده‌شده برای راستی‌آزمایی عبارت‌اند از:
+\begin{enumerate}
+    \item دانشنامه رسمی پروژه: \url{https://github.com/justcallmekoko/ESP32Marauder/wiki}
+    \item صفحه رابط خط فرمان: \url{https://github.com/justcallmekoko/ESP32Marauder/wiki/cli}
+    \item راهنمای نصب در \en{Arduino IDE}: \url{https://github.com/justcallmekoko/ESP32Marauder/wiki/arduino-ide-setup}
+    \item راهنمای \en{Wardrive}: \url{https://github.com/justcallmekoko/ESP32Marauder/wiki/wardrive}
+    \item فایل \en{code (11).md} پیوست که برای ممیزی پوشش فرمان‌ها استفاده شده است.
+\end{enumerate}
+
+\ifxepersianavailable\else\endR\fi
+\end{document}

@@ -1,0 +1,44 @@
+\contentsline {section}{\numberline {1}هدف، دامنه و نتیجه نهایی}{1}{section.1}%
+\contentsline {subsection}{\numberline {1.1}ملاحظه استفاده آزمایشگاهی}{1}{subsection.1.1}%
+\contentsline {section}{\numberline {2}پیش‌نیازها و اطلاعات لازم}{1}{section.2}%
+\contentsline {section}{\numberline {3}مرحله اول: دریافت و اجرای محیط توسعه}{1}{section.3}%
+\contentsline {subsection}{\numberline {3.1}دریافت و استخراج آرشیو}{1}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}رفع خطای Chrome Sandbox}{2}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}رفع مجوز ابزارهای Backend}{2}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}اتصال VPN و دریافت وابستگی‌های محیط توسعه}{2}{subsection.3.4}%
+\contentsline {section}{\numberline {4}مرحله دوم: نصب هسته ESP32 و آماده‌سازی پورت سریال}{3}{section.4}%
+\contentsline {subsection}{\numberline {4.1}افزودن نشانی Boards Manager}{3}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}اعطای دسترسی به پورت سریال}{3}{subsection.4.2}%
+\contentsline {section}{\numberline {5}مرحله سوم: بازکردن پروژه و تنظیم برد}{4}{section.5}%
+\contentsline {subsection}{\numberline {5.1}بازکردن فایل اصلی پروژه}{4}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}چهار تنظیم اصلی منوی Tools}{4}{subsection.5.2}%
+\contentsline {section}{\numberline {6}مرحله چهارم: نصب وابستگی‌های نرم‌افزاری}{4}{section.6}%
+\contentsline {subsection}{\numberline {6.1}کتابخانه‌های نصب‌شده از Library Manager}{4}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}نصب دستی ESP32Ping}{5}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}جایگزینی ESPAsyncWebServer}{5}{subsection.6.3}%
+\contentsline {section}{\numberline {7}مرحله پنجم: رفع خطای پیونددهنده}{5}{section.7}%
+\contentsline {subsection}{\numberline {7.1}ماهیت خطا}{5}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}اعمال اصلاح روی platform.txt}{6}{subsection.7.2}%
+\contentsline {section}{\numberline {8}مرحله ششم: کامپایل و بارگذاری روی برد}{6}{section.8}%
+\contentsline {subsection}{\numberline {8.1}کنترل پیش از Upload}{6}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}اجرای Upload و ورود دستی به Download Mode}{7}{subsection.8.2}%
+\contentsline {section}{\numberline {9}مرحله هفتم: راه‌اندازی Serial Monitor}{7}{section.9}%
+\contentsline {section}{\numberline {10}مرحله هشتم: اعتبارسنجی رابط خط فرمان}{8}{section.10}%
+\contentsline {subsection}{\numberline {10.1}آزمون اولیه help و channel}{8}{subsection.10.1}%
+\contentsline {subsection}{\numberline {10.2}خروجی کامل help ثبت‌شده در آزمایش}{8}{subsection.10.2}%
+\contentsline {section}{\numberline {11}مرجع توضیحی فرمان‌های CLI}{9}{section.11}%
+\contentsline {subsection}{\numberline {11.1}مدیریت عمومی، تنظیمات و ذخیره‌سازی}{9}{subsection.11.1}%
+\contentsline {subsection}{\numberline {11.2}GPS و ثبت موقعیت}{10}{subsection.11.2}%
+\contentsline {subsection}{\numberline {11.3}پایش شبکه و خدمات میزبان}{10}{subsection.11.3}%
+\contentsline {subsection}{\numberline {11.4}شنود و تحلیل فریم}{11}{subsection.11.4}%
+\contentsline {subsection}{\numberline {11.5}شناسه‌ها، MAC و ساخت فهرست}{11}{subsection.11.5}%
+\contentsline {subsection}{\numberline {11.6}قابلیت‌های فعال و تهاجمی}{12}{subsection.11.6}%
+\contentsline {section}{\numberline {12}مرحله نهم: اجرای اسکن عملیاتی}{12}{section.12}%
+\contentsline {subsection}{\numberline {12.1}ترتیب صحیح فرمان‌ها}{12}{subsection.12.1}%
+\contentsline {subsection}{\numberline {12.2}خروجی ثبت‌شده}{12}{subsection.12.2}%
+\contentsline {subsection}{\numberline {12.3}نحوه خواندن هر سطر}{13}{subsection.12.3}%
+\contentsline {subsection}{\numberline {12.4}نمایش جزئیات AP شماره ۹}{13}{subsection.12.4}%
+\contentsline {section}{\numberline {13}چک‌لیست بازتولید کامل}{14}{section.13}%
+\contentsline {section}{\numberline {14}راهنمای عیب‌یابی سریع}{14}{section.14}%
+\contentsline {section}{\numberline {15}نتیجه‌گیری}{15}{section.15}%
+\contentsline {section}{\numberline {16}منابع فنی}{15}{section.16}%
