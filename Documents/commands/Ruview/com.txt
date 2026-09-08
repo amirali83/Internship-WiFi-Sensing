@@ -1,0 +1,71 @@
+(WiFi setting Manualy)
+
+. "$HOME/esp/esp-idf/export.sh"
+sudo chmod 666 /dev/ttyACM0
+cd ~/Desktop/Amirali/WifiSensing/ruview/firmware/esp32-csi-node
+
+----
+
+idf.py set-target esp32s3
+idf.py menuconfig
+
+----
+
+hostname -I | awk '{print $1}'
+
+----
+
+WiFi SSID : Sharif-WiFi
+WiFi Password: 
+Aggregator IP: 
+Aggregator Port: 5005
+Node ID: 0-255
+
+----
+
+idf.py -p /dev/ttyACM0 erase-flash
+idf.py -p /dev/ttyACM0 flash monitor
+(to close this use Ctrl + ])
+
+----
+
+(better to be in another terminal) 
+cd ~/Desktop/Amirali/WifiSensing/ruview/v2
+cargo run --release --package wifi-densepose-sensing-server -- --udp-bind 0.0.0.0 --udp-insecure-lan --source esp32
+
+----
+
+open http://localhost:8080/ui/index.html
+
+----
+
+WDP_TDM_SLOTS=3 WDP_TDM_SLOT_US=200000 WDP_MOTION_THRESHOLD=1.5 cargo run --release --package wifi-densepose-sensing-server -- --udp-bind 0.0.0.0 --udp-insecure-lan --source esp32
+
+----
+
+######################################################################
+how to program using python (easier to change WiFi setting)
+
+. "$HOME/esp/esp-idf/export.sh"
+sudo chmod 666 /dev/ttyACM0
+cd ~/Desktop/Amirali/WifiSensing/ruview/firmware/esp32-csi-node
+idf.py set-target esp32s3
+idf.py -p /dev/ttyACM0 erase-flash
+idf.py -p /dev/ttyACM0 flash 
+
+----
+
+python3 provision.py --port /dev/ttyACM0 --ssid "Sharif-WiFi" --password "" --target-ip 172.27.2.87 --node-id 1 --tdm-slot 0 --tdm-total 6
+python3 provision.py --port /dev/ttyACM0 --ssid "Sharif-WiFi" --password "" --target-ip 172.27.2.87 --node-id 2 --tdm-slot 1 --tdm-total 6
+python3 provision.py --port /dev/ttyACM0 --ssid "Sharif-WiFi" --password "" --target-ip 172.27.2.87 --node-id 3 --tdm-slot 2 --tdm-total 6
+python3 provision.py --port /dev/ttyACM0 --ssid "Sharif-WiFi" --password "" --target-ip 172.27.2.87 --node-id 4 --tdm-slot 3 --tdm-total 6
+python3 provision.py --port /dev/ttyACM0 --ssid "Sharif-WiFi" --password "" --target-ip 172.27.2.87 --node-id 5 --tdm-slot 4 --tdm-total 6
+python3 provision.py --port /dev/ttyACM0 --ssid "Sharif-WiFi" --password "" --target-ip 172.27.2.87 --node-id 6 --tdm-slot 5 --tdm-total 6
+
+----
+
+cd ~/Desktop/Amirali/WifiSensing/ruview/v2
+WDP_GUARD_INTERVAL_US=150000 cargo run --release --package wifi-densepose-sensing-server -- --source esp32 --udp-port 5005 --udp-bind 0.0.0.0 --udp-insecure-lan --http-port 3000 --ws-port 3001 --ui-path ../ui
+
+
+

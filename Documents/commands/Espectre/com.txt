@@ -1,0 +1,44 @@
+(Normal Espectre)
+cd ~/Desktop/Amirali/WifiSensing/espectre/espectre
+
+----
+
+source venv/bin/activate
+
+----
+
+esptool erase-flash
+
+----
+
+esphome run examples/espectre-s3-dev.yaml
+(see output for new ip)
+
+----
+
+log in http://localhost:8123/
+got to map or setting to add 
+
+##################################################################################################################
+(espectre micro (python))
+
+sudo ufw allow 1883/tcp
+
+----
+
+cd ~/Desktop/Amirali/WifiSensing/espectre/espectre/micro-espectre
+source venv/bin/activate
+./me flash
+
+(small chance of needing to change files in src/config_local.py.example src/config_local.py)
+
+----
+
+./me deploy
+./me run
+
+(if problem on flash and deploy change socket on esp32 from left to right)
+(if have ENOM Error run flash and run multiple times it will fix it no fixed solution)
+(a lot of problem to fix this)
+
+
