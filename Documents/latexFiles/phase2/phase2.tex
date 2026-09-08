@@ -115,7 +115,6 @@ cd ~/Desktop/Amirali/WifiSensing/ruview/firmware/esp32-csi-node
 \begin{latin}
 \BeginAccSupp{method=hex,ActualText={736f757263652076656e762f62696e2f61637469766174650a6964662e7079207365742d74617267657420657370333273330a6964662e7079206d656e75636f6e6669670a}}
 \begin{lstlisting}[language=bash]
-source venv/bin/activate
 idf.py set-target esp32s3
 idf.py menuconfig
 \end{lstlisting}
@@ -327,6 +326,21 @@ idf.py -p /dev/ttyACM0 flash
 \subsubsection{گام چهارم: پیکربندی تنظیمات با اسکریپت Provision.py}
 
 در این مرحله، به جای استفاده از \lr{menuconfig} و کامپایل مجدد، از اسکریپت \lr{provision.py} برای نوشتن مستقیم تنظیمات در پارتیشن \lr{NVS} استفاده می‌کنیم. این اسکریپت اطلاعاتی مانند \lr{SSID}، رمز عبور، آی‌پی سرور، شناسه گره و تنظیمات \lr{TDM} را روی گره ذخیره می‌کند.
+
+این شبکه مثل یک \textbf{حلقه‌ی زمانی} کار می‌کند که گره‌ها یکی پس از دیگری در آن صحبت می‌کنند.
+
+\begin{itemize}
+    \item فرض کنید $N$ تا گره داریم ($N = \text{tdm-total}$)
+    \item این $N$ تا گره در یک چرخه‌ی زمانی، \textbf{به نوبت} با هم ارتباط می‌گیرند
+    \item ترتیب نوبت‌ها دقیقاً بر اساس شماره‌ی اسلات است:
+    \begin{enumerate}
+        \item اول \textbf{گره ۰} حرف می‌زند
+        \item بعد \textbf{گره ۱} حرف می‌زند
+        \item بعد \textbf{گره ۲} حرف می‌زند
+        \item و الی آخر تا \textbf{گره } $N-1$
+        \item بعد دوباره از \textbf{گره ۰} شروع می‌شود
+    \end{enumerate}
+\end{itemize}
 
 برای اولین گره (به عنوان مثال گره شماره ۱)، دستور زیر را اجرا می‌کنیم:
 

@@ -19,7 +19,7 @@
 \contentsline {paragraph}{هشدار مهم در خصوص درگاه اتصال برد \lr {(Hardware Port Warning)}:}{6}{section*.3}%
 \contentsline {section}{\numberline {7}تحلیل الگوریتم‌های آشکارسازی: MVS در برابر ML}{6}{section.7}%
 \contentsline {subsection}{\numberline {7.1}الگوریتم واریانس متحرک فضایی (MVS)}{6}{subsection.7.1}%
-\contentsline {subsection}{\numberline {7.2}الگوریتم یادگیری ماشین (ML)}{6}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.2}الگوریتم یادگیری ماشین (ML)}{7}{subsection.7.2}%
 \contentsline {section}{\numberline {8}مفهوم ISAC و تفاوت بنیادین با پلتفرم RuView}{7}{section.8}%
 \contentsline {section}{\numberline {9}خروجی نهایی و داشبورد پایش}{7}{section.9}%
-\contentsline {section}{\numberline {10}نتیجه‌گیری}{7}{section.10}%
+\contentsline {section}{\numberline {10}نتیجه‌گیری}{8}{section.10}%

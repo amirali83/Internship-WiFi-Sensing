@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022) (preloaded format=xelatex 2026.6.5)  8 SEP 2026 12:12
+This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022) (preloaded format=xelatex 2026.6.5)  8 SEP 2026 15:44
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -709,24 +709,29 @@ File: lstlang1.sty 2020/03/24 1.8d listings language file
 )
 LaTeX Font Info:    Font shape `TU/lmtt/bx/n' in size <10.95> not available
 (Font)              Font shape `TU/lmtt/b/n' tried instead on input line 84.
- [3] [4] [5] [6]
-Overfull \hbox (8.06868pt too wide) in paragraph at lines 255--256
+ [3] [4] [5]
+Overfull \hbox (61.19115pt too wide) in paragraph at lines 244--246
+[]\TU/Amiri(0)/m/n/12 میشود. برای تغییر این باید در فایل []\TU/NotoSans(0)/m/n/12 Desktop/Amirali/WifiSensing/espectre/espectre/examples/espectre-[][]
+ []
+
+[6]
+Overfull \hbox (8.06868pt too wide) in paragraph at lines 261--262
 []\TU/Amiri(0)/m/n/12 استاندارد شبکه ([]\TU/NotoSans(0)/m/n/12 Ping/DNS[]\TU/Amiri(0)/m/n/12 )، اطلاعات []\TU/NotoSans(0)/m/n/12 CSI[] \TU/Amiri(0)/m/n/12 امواج برگشتی را هم‌زمان استخراج و پردازش‌های آماری/عصبی[]
  []
 
 File: ImagesPhase3/ph.png Graphic file (type bmp)
 <ImagesPhase3/ph.png>
-[7] (./phase3.aux)
+[7] [8] (./phase3.aux)
 Package rerunfilecheck Info: File `phase3.out' has not changed.
 (rerunfilecheck)             Checksum: 891A5789C670F5E4229D15869FD5663D;7317.
  ) 
 Here is how much of TeX's memory you used:
  17768 strings out of 476179
- 344401 string characters out of 5813073
+ 344398 string characters out of 5813073
  939692 words of memory out of 5000000
  38179 multiletter control sequences out of 15000+600000
  477239 words of font info for 105 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  88i,8n,99p,1370b,1272s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on phase3.xdv (7 pages, 144020 bytes).
+Output written on phase3.xdv (8 pages, 148136 bytes).

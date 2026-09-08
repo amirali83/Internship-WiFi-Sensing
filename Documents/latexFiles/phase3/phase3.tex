@@ -155,7 +155,7 @@ logger:
 \BeginAccSupp{method=hex,ActualText={736f757263652076656e762f62696e2f61637469766174650a657370746f6f6c2e70792065726173655f666c6173680a}}
 \begin{lstlisting}[language=bash]
 source venv/bin/activate
-esptool.py erase_flash
+esptool erase-flash
 \end{lstlisting}
 \EndAccSupp{}
 \end{latin}
@@ -214,6 +214,7 @@ docker run -d --name homeassistant --privileged --restart=unless-stopped --net=h
 \subsection{پیکربندی گره در پنل تحت وب \lr{Home Assistant} و مدیریت تغییر \lr{IP}}
 \begin{enumerate}
     \item ورود به پنل از طریق مرورگر با آدرس \url{http://localhost:8123}.
+    \item ورود با نام کربری و رمز \lr{username: amirali, password: 123456789}
     \item ورود به مسیر: \lr{Settings} $\rightarrow$ \lr{Devices \& Services} $\rightarrow$ \lr{Add Integration}.
     \item انتخاب ماژول \lr{ESPHome} و وارد کردن دستی آدرس آی‌پی برد (به‌عنوان مثال: \lr{172.27.4.45}) روی پورت پیش‌فرض \textbf{۶۰۵۳}.
 \end{enumerate}
@@ -235,8 +236,13 @@ esphome logs examples/espectre-s3-dev.yaml
 \subsection{ایجاد داشبورد گرافیکی }
 پس از ایجاد یک داشبورد جدید، ویرایشگر ساختار خام (\lr{Raw configuration editor}) باز شده و محتویات فایل آماده \lr{examples/home-assistant-dashboard-dev.yaml} درون آن بارگذاری شد تا گیج‌های شدت حرکت، وضعیت آشکارساز و نمودارهای سابقه ۲۴ ساعته فعال گردند.
 
+برای این کار باید به بخش Map در نوار سمت چپ رفته و روی علامت مداد بالا سمت راست بزنید.
+
 \paragraph{هشدار مهم در خصوص درگاه اتصال برد \lr{(Hardware Port Warning)}:}
 بردهای توسعه \lr{ESP32-S3} معمولاً دارای دو درگاه فیزیکی \lr{Type-C} مجزا هستند. برای فلش، مانیتورینگ زنده سریال و ارتباط مستقیم با کنترلر داخلی \lr{USB-JTAG (ttyACM0)}، کابل \lr{USB} باید \textbf{حتماً به درگاه سمت چپ} برد متصل گردد؛ در غیر این صورت فریم‌ورک شناسایی نشده و ارسال دستورات فلش با خطا مواجه خواهد شد.
+
+نکته: برای تشخیص حرکت از دو الگوریتم ml و mvs استفاده میشود. در حالت پیشفرض از mvs استفاده میشود. برای تغییر این باید در فایل 
+\lr{Desktop/Amirali/WifiSensing/espectre/espectre/examples/espectre-s3-dev.yaml} خط 24 تغییر ایجاد شود.
 
 \section{تحلیل الگوریتم‌های آشکارسازی: MVS در برابر ML}
 

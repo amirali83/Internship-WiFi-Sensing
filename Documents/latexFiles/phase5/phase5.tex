@@ -101,6 +101,8 @@ sudo ufw allow 1883/tcp
 \subsection{فلش کردن فریم‌ورک و آماده‌سازی گره}
 جهت استقرار مفسر و فریم‌ورک بهینه‌شده \lr{CSI} بر روی برد \lr{ESP32-S3}، حافظه پاک‌سازی و فریم‌ورک اولیه فلش گردید:
 
+نکته: برای این بخش باید به به خروجی سمت راست esp32 یعنی com وصل شوید.
+
 \begin{latin}
 \BeginAccSupp{method=hex,ActualText={6364207e2f4465736b746f702f416d6972616c692f5769666953656e73696e672f65737065637472652f65737065637472652f6d6963726f2d65737065637472650a736f757263652076656e762f62696e2f61637469766174650a2e2f6d6520666c6173680a}}
 \begin{lstlisting}[language=bash]
@@ -163,7 +165,7 @@ FATAL: No CSI packets after 3 attempts - cannot operate without traffic
 \begin{latin}
 \BeginAccSupp{method=hex,ActualText={23207372632f747261666669632e70790a0a646566205f5f696e69745f5f2873656c662c206d6f64653d4d4f44455f444e53293a0a}}
 \begin{lstlisting}[language=python]
-# src/traffic.py
+# src/traffic_generator.py
 
 def __init__(self, mode=MODE_DNS):
 \end{lstlisting}
