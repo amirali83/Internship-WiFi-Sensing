@@ -2,6 +2,8 @@
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{listings}
+\usepackage{textcomp}
+\usepackage{accsupp}
 \usepackage{xcolor}
 \usepackage{geometry}
 \usepackage{subcaption}
@@ -13,14 +15,18 @@ basicstyle=\small\ttfamily,
 backgroundcolor=\color{gray!10},
 frame=single,
 breaklines=true,
-postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+breakatwhitespace=true,
 keywordstyle=\color{blue}\bfseries,
 commentstyle=\color{green!60!black},
 stringstyle=\color{purple},
 showstringspaces=false,
+upquote=true,
 columns=fullflexible,
 keepspaces=true
 }
+
+% لایهٔ ActualText باعث می‌شود متن اصلی کد، مستقل از شکست ظاهری خطوط،
+% به‌صورت دقیق از PDF انتخاب و کپی شود.
 
 % --- تنظیمات هایپرلینک ---
 \usepackage{hyperref}
@@ -57,6 +63,7 @@ urlcolor=cyan
 برای مجاز کردن دسترسی گره‌ها روی پورت استاندارد \lr{1883}، فایل کانفیگ اختصاصی ساخته شد:
 
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={6d6b646972202d70207e2f6d6f7371756974746f5f636f6e6669670a636174203c3c2027454f4627203e207e2f6d6f7371756974746f5f636f6e6669672f6d6f7371756974746f2e636f6e660a6c697374656e657220313838330a616c6c6f775f616e6f6e796d6f757320747275650a454f460a}}
 \begin{lstlisting}[language=bash]
 mkdir -p ~/mosquitto_config
 cat << 'EOF' > ~/mosquitto_config/mosquitto.conf
@@ -64,29 +71,29 @@ listener 1883
 allow_anonymous true
 EOF
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 \subsection{اجرای کارگزار \lr{Mosquitto} تحت داکر}
 کانتینر کارگزار با دستور زیر اجرا و پورت \lr{1883} نگاشت گردید:
 
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={7375646f20646f636b65722072756e202d64202d2d6e616d65206d6f7371756974746f202d2d7265737461727420756e6c6573732d73746f70706564202d7020313838333a31383833202d76207e2f6d6f7371756974746f5f636f6e6669672f6d6f7371756974746f2e636f6e663a2f6d6f7371756974746f2f636f6e6669672f6d6f7371756974746f2e636f6e662065636c697073652d6d6f7371756974746f0a}}
 \begin{lstlisting}[language=bash]
-sudo docker run -d 
---name mosquitto 
---restart unless-stopped 
--p 1883:1883 
--v ~/mosquitto_config/mosquitto.conf:/mosquitto/config/mosquitto.conf 
-eclipse-mosquitto
+sudo docker run -d --name mosquitto --restart unless-stopped -p 1883:1883 -v ~/mosquitto_config/mosquitto.conf:/mosquitto/config/mosquitto.conf eclipse-mosquitto
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 \subsection{تنظیمات فایروال سیستم}
 جهت عبور پکت‌های شبکه از لایه فایروال:
 
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={7375646f2075667720616c6c6f7720313838332f7463700a}}
 \begin{lstlisting}[language=bash]
 sudo ufw allow 1883/tcp
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 \section{فلش و دیپلوی فریم‌ورک \lr{Micro-ESPectre}}
@@ -95,16 +102,19 @@ sudo ufw allow 1883/tcp
 جهت استقرار مفسر و فریم‌ورک بهینه‌شده \lr{CSI} بر روی برد \lr{ESP32-S3}، حافظه پاک‌سازی و فریم‌ورک اولیه فلش گردید:
 
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={6364207e2f4465736b746f702f416d6972616c692f5769666953656e73696e672f65737065637472652f65737065637472652f6d6963726f2d65737065637472650a736f757263652076656e762f62696e2f61637469766174650a2e2f6d6520666c6173680a}}
 \begin{lstlisting}[language=bash]
 cd ~/Desktop/Amirali/WifiSensing/espectre/espectre/micro-espectre
 source venv/bin/activate
 ./me flash
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 \subsection{تنظیمات فایل پیکربندی}
 مشخصات شبکه و اتصال کارگزار در فایل \lr{src/config\_local.py} تنظیم شد:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={574946495f53534944203d20225368617269662d57694669220a574946495f50415353574f5244203d2022220a4d5154545f42524f4b4552203d20223137322e32372e322e3837220a4d5154545f504f5254203d20313838330a4d5154545f555345524e414d45203d2022220a4d5154545f50415353574f5244203d2022220a4d5154545f544f5049435f505245464958203d20226573706563747265220a}}
 \begin{lstlisting}[language=python]
 WIFI_SSID = "Sharif-WiFi"
 WIFI_PASSWORD = ""
@@ -114,16 +124,19 @@ MQTT_USERNAME = ""
 MQTT_PASSWORD = ""
 MQTT_TOPIC_PREFIX = "espectre"
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 \subsection{انتقال فایل‌ها و اجرای پروژه}
 با استفاده از ابزار خط فرمان پروژه، سورس‌کدها به حافظه گره منتقل و برنامه اجرا شد:
 
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={2e2f6d65206465706c6f790a2e2f6d652072756e0a}}
 \begin{lstlisting}[language=bash]
 ./me deploy
 ./me run
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 \section{عیب‌یابی تخصصی حافظه و پایدارسازی جریان \lr{CSI}}
@@ -132,12 +145,14 @@ MQTT_TOPIC_PREFIX = "espectre"
 در زمان اجرای اولیه برنامه با ماژول تولید ترافیک پیش‌فرض (\lr{ICMP Ping})، سیستم با خطای زیر متوقف می‌شد:
 
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={547261666669632067656e657261746f722073746172746564202870696e672c2031303020707073290a50696e6720736f636b6574206572726f723a205b4572726e6f2031325d20454e4f4d454d0a5741524e494e473a204f6e6c79203020435349207061636b657473202d2072657374617274696e672054472028617474656d707420322f33290a464154414c3a204e6f20435349207061636b657473206166746572203320617474656d707473202d2063616e6e6f74206f70657261746520776974686f757420747261666669630a}}
 \begin{lstlisting}
 Traffic generator started (ping, 100 pps)
 Ping socket error: [Errno 12] ENOMEM
 WARNING: Only 0 CSI packets - restarting TG (attempt 2/3)
 FATAL: No CSI packets after 3 attempts - cannot operate without traffic
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 \subsection{تحلیل فنی علت بروز خطا}
@@ -146,11 +161,13 @@ FATAL: No CSI packets after 3 attempts - cannot operate without traffic
 جهت حذف کامل سربار سوکت‌های خام، مد تولید ترافیک به بسته‌های استاندارد \lr{UDP (DNS Query)} تغییر داده شد. در این حالت به علت ساختار سبک سوکت \lr{UDP}، هیچ‌گونه خطای حافظه‌ای رخ نداد:
 
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={23207372632f747261666669632e70790a0a646566205f5f696e69745f5f2873656c662c206d6f64653d4d4f44455f444e53293a0a}}
 \begin{lstlisting}[language=python]
-#src/traffic.py
+# src/traffic.py
 
-def **init**(self, mode=MODE_DNS):
+def __init__(self, mode=MODE_DNS):
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 \section{مصورسازی داده‌ها در مانیتور تحت وب}

@@ -1,0 +1,25 @@
+\contentsline {section}{\numberline {1}مقدمه و ساختار کلی پروژه}{3}{section.1}%
+\contentsline {section}{\numberline {2}معماری ساختاری ESPHome و عدم نیاز به کدنویسی مستقیم C++}{3}{section.2}%
+\contentsline {section}{\numberline {3}مراحل آماده‌سازی و نصب بسته‌های پایه}{3}{section.3}%
+\contentsline {subsection}{\numberline {3.1}ایجاد محیط مجازی و نصب ابزار ESPHome}{3}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}تعریف متغیرهای دسترسی شبکه (secrets.yaml)}{3}{subsection.3.2}%
+\contentsline {section}{\numberline {4}اصلاح فایل‌های پیکربندی سخت‌افزاری و نرم‌افزاری}{3}{section.4}%
+\contentsline {subsection}{\numberline {4.1}اصلاح فایل espectre-s3.yaml}{4}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}اصلاح فایل espectre-s3-dev.yaml}{4}{subsection.4.2}%
+\contentsline {section}{\numberline {5}دستورات پاک‌سازی، کامپایل و مانیتورینگ سریال}{4}{section.5}%
+\contentsline {subsection}{\numberline {5.1}پاک‌سازی کامل حافظه فلش}{4}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}کامپایل و فلش فریم‌ورک}{4}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}مشاهده لاگ‌های بی‌درنگ}{5}{subsection.5.3}%
+\contentsline {section}{\numberline {6}راه‌اندازی Docker و استقرار سرور \lr {Home Assistant}}{5}{section.6}%
+\contentsline {subsection}{\numberline {6.1}تنظیم آینه‌های رجیستری داکر \lr {(Docker Daemon Mirror)}}{5}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}اجرای کانتینر \lr {Home Assistant} با دسترسی به شبکه سیستم}{5}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}پیکربندی گره در پنل تحت وب \lr {Home Assistant} و مدیریت تغییر \lr {IP}}{5}{subsection.6.3}%
+\contentsline {paragraph}{مدیریت تغییر آدرس IP دینامیک \lr {(DHCP Re-assignment)}:}{5}{section*.2}%
+\contentsline {subsection}{\numberline {6.4}ایجاد داشبورد گرافیکی }{6}{subsection.6.4}%
+\contentsline {paragraph}{هشدار مهم در خصوص درگاه اتصال برد \lr {(Hardware Port Warning)}:}{6}{section*.3}%
+\contentsline {section}{\numberline {7}تحلیل الگوریتم‌های آشکارسازی: MVS در برابر ML}{6}{section.7}%
+\contentsline {subsection}{\numberline {7.1}الگوریتم واریانس متحرک فضایی (MVS)}{6}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}الگوریتم یادگیری ماشین (ML)}{6}{subsection.7.2}%
+\contentsline {section}{\numberline {8}مفهوم ISAC و تفاوت بنیادین با پلتفرم RuView}{7}{section.8}%
+\contentsline {section}{\numberline {9}خروجی نهایی و داشبورد پایش}{7}{section.9}%
+\contentsline {section}{\numberline {10}نتیجه‌گیری}{7}{section.10}%

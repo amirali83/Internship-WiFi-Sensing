@@ -2,6 +2,7 @@
 \usepackage{amsmath,amssymb,graphicx}
 \usepackage[table]{xcolor}
 \usepackage{geometry,booktabs,tabularx,longtable,array,enumitem,listings,caption,xurl,fancyhdr,fontspec,hyperref}
+\usepackage{textcomp,accsupp}
 \geometry{top=2.4cm,bottom=2.4cm,left=2.2cm,right=2.2cm}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0.55em}
@@ -41,7 +42,10 @@
 \definecolor{codepurple}{RGB}{118,43,131}
 \lstdefinelanguage{bash}{morekeywords={cd,chmod,chown,cp,echo,find,git,grep,ls,mv,rm,sed,sudo,usermod},sensitive=true,morecomment=[l]{\#},morestring=[b]"}
 \lstdefinelanguage{text}{}
-\lstset{basicstyle=\small\ttfamily,backgroundcolor=\color{codebg},frame=single,rulecolor=\color{gray!35},breaklines=true,postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},keywordstyle=\color{blue!70!black}\bfseries,commentstyle=\color{codegreen},stringstyle=\color{codepurple},showstringspaces=false,columns=fullflexible,keepspaces=true,numbers=left,numberstyle=\scriptsize\color{gray},numbersep=7pt,xleftmargin=1.5em}
+\lstset{basicstyle=\small\ttfamily,backgroundcolor=\color{codebg},frame=single,rulecolor=\color{gray!35},breaklines=true,breakatwhitespace=false,keywordstyle=\color{blue!70!black}\bfseries,commentstyle=\color{codegreen},stringstyle=\color{codepurple},showstringspaces=false,upquote=true,columns=fullflexible,keepspaces=true,numbers=left,numberstyle=\scriptsize\color{gray},numbersep=7pt,xleftmargin=1.5em}
+
+% لایهٔ ActualText باعث می‌شود متن اصلی کد، مستقل از شکست ظاهری خطوط و شماره‌ها،
+% به‌صورت دقیق از PDF انتخاب و کپی شود.
 
 \hypersetup{colorlinks=true,linkcolor=blue!55!black,urlcolor=cyan!45!black,citecolor=blue!55!black,pdftitle={راهنمای بازتولیدپذیر نصب و راه‌اندازی ESP32 Marauder روی ESP32-S3}}
 \pagestyle{fancy}
@@ -107,41 +111,53 @@
 
 پس از دریافت، آرشیو در یک پوشه کاری استخراج شد. تمام فرمان‌های این بخش باید از داخل همان پوشه‌ای اجرا شوند که فایل \code{arduino-ide} و فایل \code{chrome-sandbox} در آن قرار دارند. برای اطمینان می‌توان ابتدا محتویات پوشه را بررسی کرد:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={6c73202d6c2061726475696e6f2d696465206368726f6d652d73616e64626f780a}}
 \begin{lstlisting}[language=bash]
 ls -l arduino-ide chrome-sandbox
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 سپس مجوز اجرای فایل اصلی فعال و برنامه اجرا شد:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={63686d6f64202b782061726475696e6f2d6964650a2e2f61726475696e6f2d6964650a}}
 \begin{lstlisting}[language=bash]
 chmod +x arduino-ide
 ./arduino-ide
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
+
+نکته: از بعد از نصب اولیه دیگه نیازی به این کار ها نیست و با رفتن به محل پوشه ای که فایل در آن قرار و باز کردن فایل مورد نظر \eng{\/Desktop\/Amirali\/arduino\/arduino-ide} برنامه خود به خود باز می‌شود.
 
 \subsection{رفع خطای Chrome Sandbox}
 در اجرای اولیه، برنامه به دلیل مالکیت یا مجوز نامناسب فایل \code{chrome-sandbox} متوقف شد. مالکیت فایل به کاربر ریشه منتقل و بیت \eng{SUID} مطابق نیاز \eng{Electron} تنظیم شد:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={7375646f2063686f776e20726f6f743a726f6f74206368726f6d652d73616e64626f780a7375646f2063686d6f642034373535206368726f6d652d73616e64626f780a6c73202d6c206368726f6d652d73616e64626f780a}}
 \begin{lstlisting}[language=bash]
 sudo chown root:root chrome-sandbox
 sudo chmod 4755 chrome-sandbox
 ls -l chrome-sandbox
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 در خروجی \code{ls -l} باید مالک و گروه \code{root} باشند و بخش مجوز کاربر به شکل \code{rws} دیده شود. پس از آن اجرای عادی دوباره امتحان می‌شود:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={2e2f61726475696e6f2d6964650a}}
 \begin{lstlisting}[language=bash]
 ./arduino-ide
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 در فرآیند انجام‌شده، برای عبور موقت از خطای باقی‌مانده، برنامه یک بار با گزینه زیر نیز اجرا شد:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={2e2f61726475696e6f2d696465202d2d6e6f2d73616e64626f780a}}
 \begin{lstlisting}[language=bash]
 ./arduino-ide --no-sandbox
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 این گزینه سازوکار \eng{Sandbox} را غیرفعال می‌کند و از نظر امنیتی انتخاب دائمی نیست. روش ترجیحی همان اصلاح صحیح مالکیت و مجوز \code{chrome-sandbox} و سپس اجرای بدون این گزینه است.
@@ -149,9 +165,11 @@ ls -l chrome-sandbox
 \subsection{رفع مجوز ابزارهای Backend}
 برای جلوگیری از خطای اجراشدن ابزارهای داخلی، مجوز اجرایی منابع \eng{Backend} فعال شد:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={63686d6f64202d52202b78207265736f75726365732f6170702f6c69622f6261636b656e642f7265736f75726365732f0a}}
 \begin{lstlisting}[language=bash]
 chmod -R +x resources/app/lib/backend/resources/
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 این فرمان نیز باید در ریشه پوشه استخراج‌شده \eng{Arduino IDE} اجرا شود. اگر مسیر وجود نداشت، ابتدا باید با \code{pwd} و \code{ls} بررسی شود که ترمینال در پوشه درست قرار دارد و ساختار نسخه دریافت‌شده با این مسیر سازگار است.
@@ -175,34 +193,42 @@ chmod -R +x resources/app/lib/backend/resources/
 \subsection{افزودن نشانی Boards Manager}
 در \eng{Arduino IDE} مسیر \eng{File > Preferences} باز و نشانی زیر در بخش \eng{Additional Boards Manager URLs} وارد شد:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={68747470733a2f2f7261772e67697468756275736572636f6e74656e742e636f6d2f6573707265737369662f61726475696e6f2d65737033322f67682d70616765732f7061636b6167655f65737033325f696e6465782e6a736f6e0a}}
 \begin{lstlisting}[language=text]
 https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 سپس از مسیر \eng{Tools > Board > Boards Manager} عبارت \code{esp32} جست‌وجو و بسته \eng{esp32 by Espressif Systems} نصب شد. نسخه موردنیاز این فرآیند دقیقاً \textbf{2.0.10} است. عبارت \eng{2.10} یک نگارش متفاوت از شماره نسخه و در این گزارش منظور نیست. الزام نسخه \eng{2.0.10} با راهنمای رسمی ساخت Marauder در Arduino IDE نیز سازگار است.
 
 پس از نصب می‌توان وجود مسیر را در ترمینال کنترل کرد:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={6c73207e2f2e61726475696e6f31352f7061636b616765732f65737033322f68617264776172652f65737033322f322e302e31302f0a}}
 \begin{lstlisting}[language=bash]
 ls ~/.arduino15/packages/esp32/hardware/esp32/2.0.10/
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 \subsection{اعطای دسترسی به پورت سریال}
 کاربر به گروه \code{dialout} افزوده شد تا بتواند بدون اجرای Arduino IDE با دسترسی ریشه، پورت‌های \code{/dev/ttyACM*} و \code{/dev/ttyUSB*} را باز کند:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={7375646f20757365726d6f64202d61202d47206469616c6f757420222455534552220a}}
 \begin{lstlisting}[language=bash]
-sudo usermod -a -G dialout $USER
+sudo usermod -a -G dialout "$USER"
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 پس از اجرای فرمان، باید یک بار از حساب کاربری خارج و دوباره وارد شد یا سیستم را راه‌اندازی مجدد کرد. سپس عضویت گروه و ظاهرشدن پورت بررسی می‌شود:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={67726f7570730a6c73202d6c202f6465762f74747941434d2a202f6465762f7474795553422a20323e2f6465762f6e756c6c0a}}
 \begin{lstlisting}[language=bash]
 groups
 ls -l /dev/ttyACM* /dev/ttyUSB* 2>/dev/null
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 \section{مرحله سوم: بازکردن پروژه و تنظیم برد}
@@ -245,20 +271,22 @@ ls -l /dev/ttyACM* /dev/ttyUSB* 2>/dev/null
 \subsection{نصب دستی ESP32Ping}
 کتابخانه \eng{ESP32Ping} به‌صورت مستقیم از مخزن آن در پوشه کتابخانه‌های کاربر نصب شد:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={6364202224484f4d452f41726475696e6f2f6c6962726172696573220a67697420636c6f6e652068747470733a2f2f6769746875622e636f6d2f6d617269616e2d6372616369756e657363752f455350333250696e672e6769740a}}
 \begin{lstlisting}[language=bash]
-cd ~/Arduino/libraries
+cd "$HOME/Arduino/libraries"
 git clone https://github.com/marian-craciunescu/ESP32Ping.git
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 \subsection{جایگزینی ESPAsyncWebServer}
 نسخه موجود حذف و نسخه مورد استفاده در فرآیند از مخزن \eng{me-no-dev} دریافت شد:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={6364202224484f4d452f41726475696e6f2f6c69627261726965732220262620726d202d7266202d2d204553504173796e635765625365727665722026262067697420636c6f6e652068747470733a2f2f6769746875622e636f6d2f6d652d6e6f2d6465762f4553504173796e635765625365727665722e6769740a}}
 \begin{lstlisting}[language=bash]
-cd ~/Arduino/libraries
-rm -rf ESPAsyncWebServer
-git clone https://github.com/me-no-dev/ESPAsyncWebServer.git
+cd "$HOME/Arduino/libraries" && rm -rf -- ESPAsyncWebServer && git clone https://github.com/me-no-dev/ESPAsyncWebServer.git
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 فرمان \code{rm -rf} پوشه موجود را به‌طور غیرقابل بازگشت حذف می‌کند؛ بنابراین باید پیش از اجرا از درست‌بودن مسیر \code{~/Arduino/libraries/ESPAsyncWebServer} اطمینان حاصل شود. اگر نسخه قبلی دارای تغییرات محلی است، ابتدا باید از آن نسخه پشتیبان تهیه شود.
@@ -274,46 +302,52 @@ git clone https://github.com/me-no-dev/ESPAsyncWebServer.git
 \subsection{اعمال اصلاح روی platform.txt}
 در حساب کاربری مورد استفاده، فایل هدف در مسیر زیر قرار داشت:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={4d415241554445525f504c4154464f524d5f46494c453d222f686f6d652f65706f2f2e61726475696e6f31352f7061636b616765732f65737033322f68617264776172652f65737033322f322e302e31302f706c6174666f726d2e747874220a}}
 \begin{lstlisting}[language=bash]
 MARAUDER_PLATFORM_FILE="/home/epo/.arduino15/packages/esp32/hardware/esp32/2.0.10/platform.txt"
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 در یک حساب دیگر، مسیر قابل‌حمل زیر مناسب‌تر است:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={4d415241554445525f504c4154464f524d5f46494c453d2224484f4d452f2e61726475696e6f31352f7061636b616765732f65737033322f68617264776172652f65737033322f322e302e31302f706c6174666f726d2e747874220a74657374202d662022244d415241554445525f504c4154464f524d5f46494c4522202626206563686f2022706c6174666f726d2e74787420666f756e64220a}}
 \begin{lstlisting}[language=bash]
 MARAUDER_PLATFORM_FILE="$HOME/.arduino15/packages/esp32/hardware/esp32/2.0.10/platform.txt"
 test -f "$MARAUDER_PLATFORM_FILE" && echo "platform.txt found"
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 اگر فایل پیدا نشد، نسخه‌های نصب‌شده مشخص می‌شوند:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={66696e64202224484f4d452f2e61726475696e6f31352f7061636b616765732f65737033322f68617264776172652f657370333222202d6d617864657074682032202d6e616d6520706c6174666f726d2e747874202d7072696e740a}}
 \begin{lstlisting}[language=bash]
-find "$HOME/.arduino15/packages/esp32/hardware/esp32" \
-  -maxdepth 2 -name platform.txt -print
+find "$HOME/.arduino15/packages/esp32/hardware/esp32" -maxdepth 2 -name platform.txt -print
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 پس از تأیید مسیر، نسخه پشتیبان تهیه و گزینه پیونددهنده افزوده شد:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={63702022244d415241554445525f504c4154464f524d5f46494c45222022247b4d415241554445525f504c4154464f524d5f46494c457d2e6261636b7570220a0a736564202d6920272f5e636f6d70696c65725c2e635c2e656c665c2e6c6962735c2e657370333273333d2f207b202f2d7a6d756c646566732f2120732f242f202d7a6d756c646566732f3b207d272022244d415241554445525f504c4154464f524d5f46494c45220a0a67726570202d6e20275e636f6d70696c65725c2e635c2e656c665c2e6c6962735c2e657370333273333d272022244d415241554445525f504c4154464f524d5f46494c45220a}}
 \begin{lstlisting}[language=bash]
 cp "$MARAUDER_PLATFORM_FILE" "${MARAUDER_PLATFORM_FILE}.backup"
 
-sed -i '/^compiler\.c\.elf\.libs\.esp32s3=/ {
-/-zmuldefs/! s/$/ -zmuldefs/
-}' "$MARAUDER_PLATFORM_FILE"
+sed -i '/^compiler\.c\.elf\.libs\.esp32s3=/ { /-zmuldefs/! s/$/ -zmuldefs/; }' "$MARAUDER_PLATFORM_FILE"
 
-grep -n '^compiler\.c\.elf\.libs\.esp32s3=' \
-  "$MARAUDER_PLATFORM_FILE"
+grep -n '^compiler\.c\.elf\.libs\.esp32s3=' "$MARAUDER_PLATFORM_FILE"
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 خروجی باید دقیقاً یک خط برای \code{compiler.c.elf.libs.esp32s3} نشان دهد و \code{-zmuldefs} در انتهای آن وجود داشته باشد. اگر تغییر باعث مشکل شد، فایل اصلی بازگردانده می‌شود:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={63702022247b4d415241554445525f504c4154464f524d5f46494c457d2e6261636b7570222022244d415241554445525f504c4154464f524d5f46494c45220a}}
 \begin{lstlisting}[language=bash]
 cp "${MARAUDER_PLATFORM_FILE}.backup" "$MARAUDER_PLATFORM_FILE"
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 پس از این تغییر، Arduino IDE بسته و دوباره باز می‌شود تا فایل پلتفرم مجدداً خوانده شود؛ سپس \eng{Verify} اجرا می‌گردد.
@@ -340,11 +374,15 @@ cp "${MARAUDER_PLATFORM_FILE}.backup" "$MARAUDER_PLATFORM_FILE"
 
 نمایش پیام زیر نشان‌دهنده پایان موفق بارگذاری است:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={4c656176696e672e2e2e204861726420726573657474696e6720766961205254532070696e2e2e2e0a}}
 \begin{lstlisting}[language=text]
 Leaving... Hard resetting via RTS pin...
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 این پیام موفقیت انتقال و درخواست بازنشانی را نشان می‌دهد. برای تأیید کامل عملکرد، آزمون سریال مرحله بعد نیز باید انجام شود.
+
+نکته: سیم باید حتما به پورت سمت چپی برد \eng{usb} متصل باشد و اگر پیام مارودر بعد از اپلود مشاده نشد یک بار سیم را به بیرون کشیده و مجدد وصل کنید.
 
 \section{مرحله هفتم: راه‌اندازی Serial Monitor}
 \begin{enumerate}
@@ -362,15 +400,18 @@ Leaving... Hard resetting via RTS pin...
 \subsection{آزمون اولیه help و channel}
 ابتدا فهرست فرمان‌ها و سپس وضعیت کانال رادیویی درخواست شد:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={68656c700a6368616e6e656c0a}}
 \begin{lstlisting}[language=text]
-#help
-#channel
+help
+channel
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 فرمان \code{help} نشان می‌دهد رابط \eng{CLI} فعال است. فرمان \code{channel} وضعیت کانال فعلی را گزارش می‌کند و شکل \code{channel -s <channel>} برای تنظیم کانال به‌کار می‌رود.
 
 \subsection{خروجی کامل help ثبت‌شده در آزمایش}
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={2368656c700a3d3d3d3d3d3d3d3d3d3d3d3d20436f6d6d616e6473203d3d3d3d3d3d3d3d3d3d3d3d0a6368616e6e656c205b2d73203c6368616e6e656c3e5d0a73657474696e6773205b2d73203c73657474696e673e20656e61626c652f64697361626c653e5d2f5b2d725d0a636c6561726c697374202d612f2d632f2d730a7265626f6f740a757064617465202d732f2d770a6c73203c6469726563746f72793e0a70726f746f636f6c696e666f0a6c6564202d73203c68657820636f6c6f723e2f2d70203c7261696e626f773e0a677073646174610a677073205b2d745d205b2d675d203c6669782f7361742f6c6f6e2f6c61742f616c742f646174652f61636375726163792f746578742f6e6d65613e0a202020205b2d6e5d203c6e61746976652f616c6c2f6770732f676c6f6e6173732f67616c696c656f2f6e617669632f717a73732f626569646f753e0a2020202020202020205b2d62203d2075736520424420767320474220666f7220626569646f755d0a6e6d65610a677073706f69202d732f2d6d2f2d650a677073747261636b6572202d63203c73746172742f73746f703e0a6576696c706f7274616c205b2d63207374617274205b2d772068746d6c2e68746d6c5d2f73657468746d6c203c68746d6c2e68746d6c3e5d0a6b61726d61202d70203c696e6465783e0a7061636b6574636f756e740a70696e677363616e0a6172707363616e205b2d665d0a706f72747363616e205b2d61202d74203c697020696e6465783e5d2f5b2d73203c7373682f74656c6e65742f646e732f687474702f736d74702f68747470732f7264703e5d0a666f7868756e74202d77203c61703e2f2d73203c61703e203c73746174696f6e3e2f2d62203c626c653e2f2d74203c66696e646d793e2f2d66203c666c69707065723e2f2d70203c70696e656170706c653e2f2d6d203c6d756c7469737369643e0a7363616e616c6c0a736e6966667261770a736e696666626561636f6e0a736e69666670726f62650a736e69666670776e0a736e69666670696e657363616e0a736e6966666d756c7469737369640a736e6966666465617574680a736e696666706d6b6964205b2d63203c6368616e6e656c3e5d5b2d645d5b2d6c5d0a736e6966667361650a73746f707363616e205b2d665d0a6d6163747261636b0a61747461636b202d74203c71756965742f6373612f7361652f626561636f6e205b2d6c2f2d722f2d615d2f646561757468205b2d635d2f5b2d73203c737263206d61633e5d205b2d64203c647374206d61633e5d2f70726f62652f7269636b726f6c6c2f6261646d7367205b2d635d2f736c656570205b2d635d3e0a696e666f205b2d61203c696e6465783e5d0a6c697374202d730a6c697374202d610a6c697374202d630a6c697374202d740a6c697374202d690a6c697374202d700a6c697374202d620a6c697374202d660a6c697374202d780a6c697374202d6d0a73656c656374202d612f2d732f2d63203c696e6465782028636f6d6d6120736570617261746564293e2f2d662022657175616c73203c537472696e673e206f7220636f6e7461696e73203c537472696e673e220a73736964202d61205b2d67203c636f756e743e2f2d6e203c6e616d653e5d0a73736964202d72203c696e6465783e0a73617665202d612f2d730a6c6f6164202d612f2d730a6a6f696e202d61203c696e6465783e202d70203c70617373776f72643e2f2d730a72616e6461706d61630a72616e647374616d61630a636c6f6e6561706d6163205b2d61203c696e6465783e5d0a636c6f6e657374616d6163205b2d73203c696e6465783e5d0a616464202d61202d62203c6d61633e205b2d6368203c6368616e6e656c3e5d205b2d65203c737369643e5d0a616464202d63202d62203c6d61633e202d6170203c61705f696e6465783e0a75706c6f6164202d64203c7764672f7769676c652f626f74683e0a6272696768746e657373205b2d63206379636c655d205b2d73203c302d393e5d0a3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d0a}}
 \begin{lstlisting}[language=text,basicstyle=\scriptsize\ttfamily]
 #help
 ============ Commands ============
@@ -436,6 +477,7 @@ upload -d <wdg/wigle/both>
 brightness [-c cycle] [-s <0-9>]
 ==================================
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 \section{مرجع توضیحی فرمان‌های CLI}
@@ -532,11 +574,13 @@ brightness [-c cycle] [-s <0-9>]
 \subsection{ترتیب صحیح فرمان‌ها}
 فرمان‌های زیر به همین ترتیب اجرا شدند:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={7363616e616c6c0a73746f707363616e0a6c697374202d610a}}
 \begin{lstlisting}[language=text]
-#scanall
-#stopscan
-#list -a
+scanall
+stopscan
+list -a
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 \begin{enumerate}
   \item \code{scanall}: اسکن APها و Stationها را آغاز می‌کند، میان کانال‌ها گردش می‌کند و نتایج را در حافظه داخلی نگه می‌دارد.
@@ -546,6 +590,7 @@ brightness [-c cycle] [-s <0-9>]
 
 \subsection{خروجی ثبت‌شده}
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={3e20236c697374202d610a5b305d5b43483a325d204e657465726269742d333331384443202d38370a5b315d5b43483a345d2054502d4c696e6b5f36443345202d37350a5b325d5b43483a355d20504f434f2058352050726f203547202d38320a5b335d5b43483a365d20204156202d38310a5b345d5b43483a365d205368617269662d57694669202d39300a5b355d5b43483a365d205368617269662d57694669202d35360a5b365d5b43483a365d205368617269662d57694669202d39300a5b375d5b43483a365d205368617269662d57694669202d39310a5b385d5b43483a365d2031343a37373a34303a37363a37353a6266202d38370a5b395d5b43483a31315d205368617269662d57694669202d34390a5b31305d5b43483a31315d20616c6927732047616c61787920413334203547202d37360a5b31315d5b43483a31315d205368617269662d57694669202d39310a5b31325d5b43483a315d205368617269662d57694669202d36340a5b31335d5b43483a315d205368617269662d57694669202d37380a5b31345d5b43483a315d205368617269662d57694669202d38330a5b31355d5b43483a315d205368617269662d57694669202d38360a5b31365d5b43483a315d205368617269662d57694669202d38350a5b31375d5b43483a365d2047616c617879204133342035472034423446202d38300a5b31385d5b43483a365d204972616e63656c6c2d6a61646964202d39310a5b31395d5b43483a31315d2042656850617264616b68742d4c3434335f42353638202d39320a302073656c65637465640a}}
 \begin{lstlisting}[language=text,basicstyle=\scriptsize\ttfamily]
 > #list -a
 [0][CH:2] Neterbit-3318DC -87
@@ -570,14 +615,17 @@ brightness [-c cycle] [-s <0-9>]
 [19][CH:11] BehPardakht-L443_B568 -92
 0 selected
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 \subsection{نحوه خواندن هر سطر}
 برای نمونه، سطر زیر تفسیر می‌شود:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={5b395d5b43483a31315d205368617269662d57694669202d34390a}}
 \begin{lstlisting}[language=text]
 [9][CH:11] Sharif-WiFi -49
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 \begin{itemize}
   \item \code{[9]} اندیس داخلی رکورد است و در فرمان‌هایی مانند \code{info -a 9} یا \code{select -a 9} استفاده می‌شود.
@@ -594,9 +642,11 @@ brightness [-c cycle] [-s <0-9>]
 \subsection{نمایش جزئیات AP شماره ۹}
 فرمان زیر اجرا شد:
 \begin{latin}
+\BeginAccSupp{method=hex,ActualText={696e666f202d6120390a}}
 \begin{lstlisting}[language=text]
-#info -a 9
+info -a 9
 \end{lstlisting}
+\EndAccSupp{}
 \end{latin}
 
 این فرمان اطلاعات رکورد AP با اندیس ۹ را از فهرست جاری درخواست می‌کند. بسته به نسخه فریم‌ور، خروجی می‌تواند شامل SSID، BSSID، کانال، RSSI، نوع رمزگذاری و سایر فراداده‌های ذخیره‌شده باشد. چون متن خروجی \code{info} در یادداشت آزمایش موجود نیست، هیچ مقدار اضافی برای آن حدس زده نشده است. برای تکمیل اجرای بعدی، خروجی کامل این فرمان باید عیناً ذخیره شود.
